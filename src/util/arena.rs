@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::ptr;
-use std::fmt::Debug;
 use std::mem::transmute;
 use anyhow::anyhow;
-use bytemuck::Pod;
 use mem_macros::size_of;
 
 // todo make thread safe
@@ -20,7 +18,7 @@ impl Arena {
         }
     }
 
-    pub fn get<T: Pod>(&self, label: &str) -> Option<T> {
+    pub fn get<T>(&self, label: &str) -> Option<T> {
         let (start, end) = self.labels.get(label)?;
         let slice = self.data.as_slice().get(*start..*end)?.as_ptr();
         Some(unsafe {
@@ -47,7 +45,7 @@ impl Arena {
         self.data.extend_from_slice(data);
     }
 
-    pub fn alloc<T: Pod>(&mut self, data: T, label: &str) {
+    pub fn alloc<T>(&mut self, data: T, label: &str) {
         let p: *const T = &data;
         let bytes: &[u8] = unsafe {
             let t_slice = std::slice::from_raw_parts(p, size_of!(T));
@@ -73,7 +71,7 @@ impl Arena {
         Ok(())
     }
 
-    pub fn insert<T: Pod + Debug>(&mut self, data: T, label: &str) -> anyhow::Result<()> {
+    pub fn insert<T>(&mut self, data: T, label: &str) -> anyhow::Result<()> {
         let p: *const T = &data;
         let bytes: &[u8] = unsafe {
             let t_slice = std::slice::from_raw_parts(p, size_of!(T));
@@ -81,11 +79,19 @@ impl Arena {
         };
         self.insert_raw(bytes, label)
     }
+
+    pub fn labels(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        for key in self.labels.keys() {
+            out.push(key.clone());
+        }
+        return out;
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use bytemuck::Zeroable;
+    use bytemuck::{Pod, Zeroable};
     use crate::util::arena::*;
 
     #[repr(C)]
