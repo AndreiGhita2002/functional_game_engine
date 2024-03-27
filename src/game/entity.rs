@@ -70,17 +70,3 @@ impl<T> Change<T> {
         })
     }
 }
-
-pub struct NoChange {}
-
-impl EntityChange for NoChange {
-    fn arena_insert(&mut self, _arena: &mut Arena) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
-
-impl NoChange {
-    pub fn new() -> Box<Self> {
-        Box::new(NoChange{})
-    }
-}

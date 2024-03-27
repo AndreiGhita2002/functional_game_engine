@@ -4,7 +4,7 @@ use crate::game::entity::{Entity, EntityChange};
 pub mod game;
 pub mod util;
 
-type System = fn(&Entity) -> Box<dyn EntityChange>;
+type System = fn(&Entity) -> Option<Box<dyn EntityChange>>;
 
 pub struct GameState {
     pub entities: Vec<Entity>,
@@ -37,9 +37,9 @@ impl GameState {
     pub fn sim_tick(&mut self) {
         for system in self.systems.iter() {
             for entity in self.entities.iter_mut() {
-                let change = system(entity);
-
-                entity.resolve_changes(change);
+                if let Some(change) = system(entity) {
+                    entity.resolve_changes(change);
+                }
             }
         }
     }
