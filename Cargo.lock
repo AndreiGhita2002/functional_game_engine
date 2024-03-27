@@ -694,7 +694,6 @@ name = "functional_game_engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bumpalo",
  "bytemuck",
  "cfg-if",
  "cgmath",
@@ -706,6 +705,7 @@ dependencies = [
  "glob",
  "image",
  "log",
+ "mem_macros",
  "pollster",
  "reqwest",
  "serde",
@@ -1221,6 +1221,12 @@ checksum = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "mem_macros"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6533f8d40a489f5eba44718880fe6c88d38deff1f12398930462c1246a2aa017"
 
 [[package]]
 name = "memchr"
