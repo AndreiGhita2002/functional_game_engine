@@ -1,69 +1,60 @@
-use std::fmt;
-use crate::game::entity::{Entity, EntityChange};
+use winit::{
+    event::*,
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
+use crate::game::GameState;
+use crate::render::GPUState;
 
 pub mod game;
 pub mod util;
-
-type System = fn(&Entity) -> Option<Box<dyn EntityChange>>;
-
-pub struct GameState {
-    pub entities: Vec<Entity>,
-    pub systems: Vec<System>,
-    next_id: u64
-}
-
-pub struct GPUState {
-    //todo
-}
+pub mod render;
 
 
-/// When and how many times should a System be run?
-pub enum Times {
-    Startup,
-    SimulationTick,
-    RenderTick,
-}
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
+pub async fn run(mut game_state: GameState) {
+    // Window setup
+    env_logger::init();
+    let event_loop = EventLoop::new().unwrap();
+    event_loop.set_control_flow(ControlFlow::Poll);
+    let window = WindowBuilder::new()
+        .with_title("hello world")
+        .build(&event_loop).unwrap();
 
+    let mut gpu_state = GPUState::new(window).await;
 
-impl GameState {
-    pub fn new() -> Self {
-        GameState {
-            entities: Vec::new(),
-            systems: Vec::new(),
-            next_id: 0,
-        }
-    }
+    event_loop.run(move |event, window_target| {
+        match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => {
+                println!("Stopping...");
+                window_target.exit();
+            },
+            Event::AboutToWait => {
+                // Application update code.
 
-    pub fn sim_tick(&mut self) {
-        for system in self.systems.iter() {
-            for entity in self.entities.iter_mut() {
-                if let Some(change) = system(entity) {
-                    entity.resolve_changes(change);
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn new_entity(&mut self) -> &Entity {
-        self.entities.push(Entity::new(self.next_id));
-        self.next_id += 1;
-        self.entities.last().unwrap()
-    }
-
-    #[allow(dead_code)]
-    pub fn new_entity_mut(&mut self) -> &mut Entity {
-        self.entities.push(Entity::new(self.next_id));
-        self.next_id += 1;
-        self.entities.last_mut().unwrap()
-    }
-
-    pub fn print_comps<T: fmt::Display>(&self, comp_label: &str) {
-        println!("Components {}:", comp_label);
-        for entity in self.entities.iter() {
-            print!("{}: ", entity.id());
-            let _ = entity.print_comp::<T>(comp_label);
-            println!();
-        }
-    }
+                // Queue a RedrawRequested event.
+                //
+                // You only need to call this if you've determined that you need to redraw in
+                // applications which do not always need to. Applications that redraw continuously
+                // can render here instead.
+                game_state.sim_tick();
+                gpu_state.window().request_redraw();
+            },
+            Event::WindowEvent {
+                event: WindowEvent::RedrawRequested,
+                ..
+            } => {
+                // Redraw the application.
+                //
+                // It's preferable for applications that do not render continuously to render in
+                // this event rather than in AboutToWait, since rendering in here allows
+                // the program to gracefully handle redraws requested by the OS.
+                gpu_state.render(&game_state);
+            },
+            _ => ()
+        };
+    }).unwrap();
 }

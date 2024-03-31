@@ -1,14 +1,13 @@
 use std::fmt;
-use std::fmt::Formatter;
-use functional_game_engine::{GameState, GPUState};
+use functional_game_engine::run;
 use functional_game_engine::game::entity::Change;
+use functional_game_engine::game::GameState;
 
 
 fn main() {
     println!("hello world!!");
 
     let mut game_state = GameState::new();
-    let _gpu_state = GPUState {};
 
     {
         let e1 = game_state.new_entity_mut();
@@ -28,11 +27,13 @@ fn main() {
         }
     });
 
-    for i in 0..4 {
-        println!(">Tick {}:", i);
-        game_state.sim_tick();
-        game_state.print_comps::<FunValue>("fun");
-    }
+    // for i in 0..4 {
+    //     println!(">Tick {}:", i);
+    //     game_state.sim_tick();
+    //     game_state.print_comps::<FunValue>("fun");
+    // }
+
+    pollster::block_on(run(game_state));
 }
 
 struct FunValue {
@@ -40,7 +41,7 @@ struct FunValue {
 }
 
 impl fmt::Display for FunValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.val)
     }
 }
