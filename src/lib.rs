@@ -9,6 +9,7 @@ use crate::render::GPUState;
 pub mod game;
 pub mod util;
 pub mod render;
+mod resources;
 
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]

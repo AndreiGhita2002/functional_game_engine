@@ -213,4 +213,26 @@ mod tests {
             assert!(arena.insert(s2, "s1").is_err());
         }
     }
+
+    #[test]
+    fn double_get() {
+        let mut arena = Arena::new();
+
+        // allocation
+        {
+            arena.alloc(TestStruct1 { i: -28, u: 74 }, "s1");
+        }
+        // access
+        {
+            let mut s1: TestStruct1 = arena.get("s1").unwrap();
+            s1.i = 2;
+            arena.insert(s1, "s1").unwrap();
+        }
+        // second access
+        {
+            let s1: TestStruct1 = arena.get("s1").unwrap();
+            assert_eq!(s1.i, 2);
+            assert_eq!(s1.u, 74);
+        }
+    }
 }

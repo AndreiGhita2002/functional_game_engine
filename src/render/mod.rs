@@ -1,8 +1,27 @@
 use std::borrow::Cow;
-use wgpu::{RenderPipeline, SurfaceTargetUnsafe};
+use std::rc::Rc;
+use wgpu::{RenderPass, RenderPipeline, SurfaceTargetUnsafe};
 use winit::window::Window;
+use crate::game::entity::Entity;
 use crate::game::GameState;
+use crate::render::asset::AssetStore;
 
+pub mod render_fn;
+pub mod texture;
+pub mod model;
+pub mod asset;
+
+pub type RenderFn = fn(& Entity, & AssetStore, & mut RenderPass); //todo change &Asset Store to some smart pointer
+
+pub struct BindGroups {
+    pub texture_layout: wgpu::BindGroupLayout,
+    // pub camera_layout: wgpu::BindGroupLayout,
+    // pub light_layout: wgpu::BindGroupLayout,
+    // pub camera: wgpu::BindGroup,
+    // pub light: wgpu::BindGroup,
+}
+
+#[allow(dead_code)]
 pub struct GPUState<'w> {
     surface: wgpu::Surface<'w>,
     device: wgpu::Device,
@@ -11,6 +30,7 @@ pub struct GPUState<'w> {
     size: winit::dpi::PhysicalSize<u32>,
     window: Window,
     render_pipeline: RenderPipeline,
+    bind_groups: BindGroups,
 }
 
 impl GPUState<'_> {
@@ -91,6 +111,32 @@ impl GPUState<'_> {
         let config = surface.get_default_config(&adapter, size.width, size.height).unwrap();
         surface.configure(&device, &config);
 
+        // bind groups:
+        let texture_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        // This should match the filterable field of the
+                        // corresponding Texture entry above.
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
+
         GPUState {
             surface,
             device,
@@ -99,10 +145,11 @@ impl GPUState<'_> {
             size,
             window,
             render_pipeline,
+            bind_groups: BindGroups {texture_layout},
         }
     }
 
-    pub fn render(&mut self, _game_state: &GameState) {
+    pub fn render(&mut self, game_state: &GameState) {
         let frame = self.surface
             .get_current_texture()
             .expect("Failed to acquire next swap chain texture");
@@ -129,7 +176,10 @@ impl GPUState<'_> {
                     occlusion_query_set: None,
                 });
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1);
+            let asset_store = &game_state.assets;
+            for entity in game_state.entities.iter() {
+                entity.render(asset_store, &mut render_pass)
+            }
         }
         self.queue.submit(Some(encoder.finish()));
         frame.present();

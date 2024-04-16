@@ -1,10 +1,16 @@
 use std::{fmt, mem};
+use std::rc::Rc;
 use anyhow::anyhow;
+use wgpu::RenderPass;
+use crate::render::asset::AssetStore;
+use crate::render::render_fn::render_nothing;
+use crate::render::RenderFn;
 use crate::util::arena::Arena;
 
 pub struct Entity {
     id: u64,
     data: Arena,
+    render_fn: RenderFn,
 }
 
 impl Entity {
@@ -12,6 +18,7 @@ impl Entity {
         Entity {
             id,
             data: Arena::new(),
+            render_fn: render_nothing,
         }
     }
 
@@ -25,6 +32,14 @@ impl Entity {
 
     pub fn mut_data(&mut self) -> &mut Arena {
         &mut self.data
+    }
+
+    pub fn render(&self, asset_store: &AssetStore, render_pass: &mut RenderPass) {
+        (self.render_fn)(self, asset_store, render_pass);
+    }
+
+    pub fn set_render_fn(&mut self, render_fn: RenderFn) {
+        self.render_fn = render_fn;
     }
 
     pub fn resolve_changes(&mut self, mut changes: Box<dyn EntityChange>) {
@@ -69,4 +84,8 @@ impl<T> Change<T> {
             data: Some(change),
         })
     }
+}
+
+pub trait Component {
+    fn to_entity(self, entity: &mut Entity);
 }
