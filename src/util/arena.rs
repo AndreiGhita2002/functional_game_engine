@@ -31,6 +31,11 @@ impl Arena {
         self.data.as_slice().get(*start..*end)
     }
 
+    pub fn get_length(&self, label: &str) -> Option<usize> {
+        let (start, end) = self.labels.get(label)?;
+        return Some(end - start);
+    }
+
     //todo test this
     #[allow(dead_code)]
     pub fn get_mut_bytes(&mut self, label: &str) -> Option<&mut [u8]> {

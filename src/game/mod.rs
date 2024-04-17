@@ -1,16 +1,14 @@
 use std::fmt;
-use std::rc::Rc;
 use crate::game::entity::{Entity, EntityChange};
-use crate::render::asset::AssetStore;
 
 pub mod entity;
+pub mod transform;
 
 type System = fn(&Entity) -> Option<Box<dyn EntityChange>>;
 
 pub struct GameState {
     pub entities: Vec<Entity>,
     pub systems: Vec<System>,
-    pub assets: AssetStore,
     next_id: u64
 }
 
@@ -28,7 +26,6 @@ impl GameState {
         GameState {
             entities: Vec::new(),
             systems: Vec::new(),
-            assets: AssetStore::new(),
             next_id: 0,
         }
     }

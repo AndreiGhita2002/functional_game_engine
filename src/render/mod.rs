@@ -1,17 +1,22 @@
 use std::borrow::Cow;
 use std::rc::Rc;
-use wgpu::{RenderPass, RenderPipeline, SurfaceTargetUnsafe};
+use wgpu::{RenderBundle, RenderBundleEncoder, RenderPass, RenderPipeline, SurfaceTargetUnsafe, TextureFormat};
 use winit::window::Window;
 use crate::game::entity::Entity;
 use crate::game::GameState;
 use crate::render::asset::AssetStore;
+use crate::util::res::Res;
 
 pub mod render_fn;
 pub mod texture;
 pub mod model;
 pub mod asset;
 
-pub type RenderFn = fn(& Entity, & AssetStore, & mut RenderPass); //todo change &Asset Store to some smart pointer
+// todo RenderFn: more intelligent AssetStore passing
+// todo RenderFn: return an enum that states how many times this function should be called
+//  remember that render bundles could be used for multiple renderPasses as a optimisation
+// todo RenderFn: return something that indicates what render pipeline to use
+pub type RenderFn = fn(&Entity, Res<AssetStore>, RenderBundleEncoder) -> RenderBundle;
 
 pub struct BindGroups {
     pub texture_layout: wgpu::BindGroupLayout,
@@ -21,10 +26,10 @@ pub struct BindGroups {
     // pub light: wgpu::BindGroup,
 }
 
-#[allow(dead_code)]
 pub struct GPUState<'w> {
     surface: wgpu::Surface<'w>,
-    device: wgpu::Device,
+    pub surface_format: TextureFormat,
+    pub device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
@@ -71,6 +76,32 @@ impl GPUState<'_> {
             None, //todo try out the trace path
         ).await.unwrap();
 
+        // bind groups:
+        let texture_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        // This should match the filterable field of the
+                        // corresponding Texture entry above.
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
+
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
@@ -78,7 +109,7 @@ impl GPUState<'_> {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[],
+            bind_group_layouts: &[&texture_layout],
             push_constant_ranges: &[],
         });
 
@@ -111,34 +142,8 @@ impl GPUState<'_> {
         let config = surface.get_default_config(&adapter, size.width, size.height).unwrap();
         surface.configure(&device, &config);
 
-        // bind groups:
-        let texture_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        // This should match the filterable field of the
-                        // corresponding Texture entry above.
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-                label: Some("texture_bind_group_layout"),
-            });
-
         GPUState {
-            surface,
+            surface, surface_format,
             device,
             queue,
             config,
@@ -149,19 +154,38 @@ impl GPUState<'_> {
         }
     }
 
-    pub fn render(&mut self, game_state: &GameState) {
+    pub fn render(&mut self, game_state: &GameState, asset_store: Res<AssetStore>) {
         let frame = self.surface
             .get_current_texture()
             .expect("Failed to acquire next swap chain texture");
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: None,
-        });
+        // creating bundles
+        let mut bundles = Vec::new();
+        for entity in game_state.entities.iter() {
+            let bundle_encoder = self.device.create_render_bundle_encoder(
+                &wgpu::RenderBundleEncoderDescriptor {
+                    label: Some("Bundle Encoder"),
+                    color_formats: &[Some(self.surface_format)],
+                    depth_stencil: None,
+                    sample_count: 0,
+                    multiview: None,
+                }
+            );
+            let maybe_bundle = entity.render(asset_store.clone(), bundle_encoder);
+            if let Some(bundle) = maybe_bundle {
+                bundles.push(bundle);
+            }
+        }
+        // command encoder
+        let mut command_encoder = self.device.create_command_encoder(
+            &wgpu::CommandEncoderDescriptor { label: Some("Command Encoder") }
+        );
+        // render pass
         {
-            let mut render_pass =
-                encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = command_encoder.begin_render_pass(
+                &wgpu::RenderPassDescriptor {
                     label: None,
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view: &view,
@@ -176,12 +200,9 @@ impl GPUState<'_> {
                     occlusion_query_set: None,
                 });
             render_pass.set_pipeline(&self.render_pipeline);
-            let asset_store = &game_state.assets;
-            for entity in game_state.entities.iter() {
-                entity.render(asset_store, &mut render_pass)
-            }
+            render_pass.execute_bundles(bundles.iter());
         }
-        self.queue.submit(Some(encoder.finish()));
+        self.queue.submit(Some(command_encoder.finish()));
         frame.present();
     }
 

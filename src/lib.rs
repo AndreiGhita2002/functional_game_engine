@@ -4,6 +4,7 @@ use winit::{
     window::WindowBuilder,
 };
 use crate::game::GameState;
+use crate::render::asset::AssetStore;
 use crate::render::GPUState;
 
 pub mod game;
@@ -23,6 +24,8 @@ pub async fn run(mut game_state: GameState) {
         .build(&event_loop).unwrap();
 
     let mut gpu_state = GPUState::new(window).await;
+
+    let asset_store = AssetStore::new(&gpu_state.device);
 
     event_loop.run(move |event, window_target| {
         match event {
@@ -53,7 +56,7 @@ pub async fn run(mut game_state: GameState) {
                 // It's preferable for applications that do not render continuously to render in
                 // this event rather than in AboutToWait, since rendering in here allows
                 // the program to gracefully handle redraws requested by the OS.
-                gpu_state.render(&game_state);
+                gpu_state.render(&game_state, asset_store.clone());
             },
             _ => ()
         };

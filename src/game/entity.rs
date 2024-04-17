@@ -1,16 +1,15 @@
 use std::{fmt, mem};
-use std::rc::Rc;
 use anyhow::anyhow;
-use wgpu::RenderPass;
+use wgpu::{RenderBundle, RenderBundleEncoder};
 use crate::render::asset::AssetStore;
-use crate::render::render_fn::render_nothing;
 use crate::render::RenderFn;
 use crate::util::arena::Arena;
+use crate::util::res::Res;
 
 pub struct Entity {
     id: u64,
     data: Arena,
-    render_fn: RenderFn,
+    render_fn: Option<RenderFn>,
 }
 
 impl Entity {
@@ -18,7 +17,7 @@ impl Entity {
         Entity {
             id,
             data: Arena::new(),
-            render_fn: render_nothing,
+            render_fn: None,
         }
     }
 
@@ -34,12 +33,21 @@ impl Entity {
         &mut self.data
     }
 
-    pub fn render(&self, asset_store: &AssetStore, render_pass: &mut RenderPass) {
-        (self.render_fn)(self, asset_store, render_pass);
+    pub fn render(&self, asset_store: Res<AssetStore>, encoder: RenderBundleEncoder) -> Option<RenderBundle> {
+        if let Some(f) = self.render_fn {
+            Some(f(self, asset_store, encoder))
+        } else {
+            None
+        }
     }
 
     pub fn set_render_fn(&mut self, render_fn: RenderFn) {
-        self.render_fn = render_fn;
+        self.render_fn = Some(render_fn);
+    }
+
+    #[allow(dead_code)]
+    pub fn del_render_fn(&mut self) {
+        self.render_fn = None;
     }
 
     pub fn resolve_changes(&mut self, mut changes: Box<dyn EntityChange>) {
