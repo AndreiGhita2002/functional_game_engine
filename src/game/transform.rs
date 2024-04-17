@@ -1,11 +1,14 @@
 use std::mem;
 use crate::game::entity::{Component, Entity};
 use crate::util::arena::Arena;
+use crate::util::Either;
 
+#[derive(Debug)]
 pub struct Transform2D {
     pub pos: [f32; 2]
 }
 
+#[derive(Debug)]
 pub struct Transform3D {
     pub pos: [f32; 3]
 }

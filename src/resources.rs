@@ -21,8 +21,10 @@ fn format_url(file_name: &str) -> reqwest::Url {
     out
 }
 
+#[allow(dead_code)]
 const MODEL_DIR: &'static str = "models/";
 
+#[allow(dead_code)]
 pub async fn load_string(file_name: &str) -> anyhow::Result<String> {
     cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
@@ -41,6 +43,7 @@ pub async fn load_string(file_name: &str) -> anyhow::Result<String> {
     Ok(txt)
 }
 
+#[allow(dead_code)]
 pub async fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
     cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
@@ -60,6 +63,7 @@ pub async fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
     Ok(data)
 }
 
+#[allow(dead_code)]
 pub async fn load_texture(
     file_name: &str,
     device: &Device,
@@ -69,6 +73,7 @@ pub async fn load_texture(
     texture::Texture::from_bytes(device, queue, &data, file_name)
 }
 
+#[allow(dead_code)]
 pub async fn load_model(
     model_name: &str,
     device: &Device,
@@ -164,6 +169,7 @@ pub async fn load_model(
     Ok(model::Model { meshes, materials })
 }
 
+#[allow(dead_code)]
 pub async fn load_sprite(
     sprite_name: &str,
     vertices: Option<Vec<SpriteVertex>>,

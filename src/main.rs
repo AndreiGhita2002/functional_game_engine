@@ -1,7 +1,9 @@
-use std::fmt;
 use functional_game_engine::run;
-use functional_game_engine::game::entity::Change;
+use functional_game_engine::game::entity::{Change, Component};
 use functional_game_engine::game::GameState;
+use functional_game_engine::game::transform::Transform2D;
+use functional_game_engine::render::asset::AssetsToLoad;
+use functional_game_engine::render::sprite::Sprite;
 
 
 fn main() {
@@ -10,38 +12,28 @@ fn main() {
     let mut game_state = GameState::new();
 
     {
-        let e1 = game_state.new_entity_mut();
-        e1.mut_data().alloc(FunValue { val: 10 }, "fun");
+        let mut e1 = game_state.new_entity_mut();
+        e1.mut_data().alloc(Transform2D { pos: [0., 0.] }, "pos");
+        Sprite::new(0).to_entity(&mut e1);
     }
     {
-        let e2 = game_state.new_entity_mut();
-        e2.mut_data().alloc(FunValue { val: -6 }, "fun");
+        let mut e2 = game_state.new_entity_mut();
+        e2.mut_data().alloc(Transform2D { pos: [0.5, 0.5] }, "pos");
+        Sprite::new(0).to_entity(&mut e2);
     }
 
     game_state.systems.push(|entity| {
-        if let Some(mut fun) = entity.data().get::<FunValue>("fun") {
-            fun.val += 1;
-            Some(Change::new(fun, "fun"))
+        if let Some(mut p) = entity.data().get::<Transform2D>("pos") {
+            p.pos[0] += 0.05;
+            Some(Change::new(p, "pos"))
         } else {
             None
         }
     });
 
-    // for i in 0..4 {
-    //     println!(">Tick {}:", i);
-    //     game_state.sim_tick();
-    //     game_state.print_comps::<FunValue>("fun");
-    // }
+    let to_load = AssetsToLoad {
+        texture_files: vec!["angry_cat.png".to_string()]
+    };
 
-    pollster::block_on(run(game_state));
-}
-
-struct FunValue {
-    val: i32,
-}
-
-impl fmt::Display for FunValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.val)
-    }
+    pollster::block_on(run(game_state, to_load));
 }

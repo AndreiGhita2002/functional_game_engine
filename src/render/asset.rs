@@ -1,10 +1,11 @@
 use std::ops::RangeBounds;
-use std::sync::{Arc, Mutex};
 use wgpu::{Buffer, BufferAddress, BufferDescriptor, BufferSlice, Device};
 use wgpu::util::DeviceExt;
 use crate::game::GameState;
-use crate::game::transform::{Either, get_pos};
+use crate::game::transform::{get_pos};
+use crate::render::GPUState;
 use crate::render::model::Material;
+use crate::util::Either;
 use crate::util::res::Res;
 
 //todo move asset.rs out of render module
@@ -20,16 +21,23 @@ pub struct AssetStore {
 }
 
 impl AssetStore {
-    pub fn new(device: &Device) -> Res<Self> {
+    pub fn new(gpu: &GPUState, to_load: Option<AssetsToLoad>) -> Res<Self> {
+        let mut materials = Vec::new();
+        if let Some(file_queue) = to_load {
+            for filename in file_queue.texture_files.iter() {
+                let mat = Material::from_texture_file(filename, gpu);
+                materials.push(mat);
+            }
+        }
         Res::new(AssetStore {
-            materials: Vec::new(),
-            instance_buffer_2d: device.create_buffer(&BufferDescriptor {
+            materials,
+            instance_buffer_2d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("2D Instance Buffer"),
                 size: 0,
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
-            instance_buffer_3d: device.create_buffer(&BufferDescriptor {
+            instance_buffer_3d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("3D Instance Buffer"),
                 size: 0,
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
@@ -37,13 +45,17 @@ impl AssetStore {
             }),
         })
     }
+
+    pub fn get_material(&self, id: MaterialId) -> Option<&Material> {
+        self.materials.get(id)
+    }
+
+    pub fn instance_buffer_2d_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
+        self.instance_buffer_2d.slice(range).clone()
+    }
 }
 
 impl Res<AssetStore> {
-    pub fn get_material(&self, id: MaterialId) -> Option<&Material> {
-        self.read().unwrap().materials.get(id)
-    }
-
     pub fn update_from_game(&mut self, game_state: &GameState, device: &Device) {
         let mut raw2d = Vec::new();
         let mut raw3d = Vec::new();
@@ -58,7 +70,7 @@ impl Res<AssetStore> {
         }
 
         {
-            let store = self.write().unwrap();
+            let mut store = self.write().unwrap();
             store.instance_buffer_2d = device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("2D Instance Buffer"),
@@ -73,8 +85,9 @@ impl Res<AssetStore> {
                 });
         }
     }
+}
 
-    pub fn instance_buffer_2d_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
-        self.write().unwrap().instance_buffer_2d.slice(range)
-    }
+
+pub struct AssetsToLoad {
+    pub texture_files: Vec<String>
 }
