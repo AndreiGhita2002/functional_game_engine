@@ -2,8 +2,10 @@ use std::borrow::Cow;
 use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
 use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
+use crate::game::transform::Transform2D;
 use crate::render::asset::{AssetStore, MaterialId};
 use crate::render::{GPUState, Renderer};
+use crate::render::model::{SpriteVertex, Vertex};
 use crate::util::res::Res;
 
 pub struct Sprite {
@@ -36,7 +38,7 @@ impl SpriteRenderer {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[SpriteVertex::desc(), Transform2D::desc::<2>()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -59,6 +61,9 @@ impl SpriteRenderer {
 impl Renderer for SpriteRenderer {
     /// Render Setup
     fn pre_render(&mut self, gpu: &GPUState, game: &GameState) {
+        // updating the buffers
+        self.asset_store.update_from_game(game, &gpu.device);
+
         // borrow asset store
         let assets = self.asset_store.read().unwrap();
         // creating bundles
@@ -72,14 +77,18 @@ impl Renderer for SpriteRenderer {
                             label: Some("Bundle Encoder"),
                             color_formats: &[Some(gpu.surface_format)],
                             depth_stencil: None,
-                            sample_count: 0,
+                            sample_count: 1,  //wgpu::MultisampleState::default() has count 1
                             multiview: None,
                         }
                     );
+                    // setting the pipeline
+                    encoder.set_pipeline(&self.pipeline);
                     // pass the texture in
                     encoder.set_bind_group(0, &material.bind_group, &[]);
+                    // pass a quad model in (two triangles make a square)
+                    encoder.set_vertex_buffer(0, assets.quad_v_buffer_slice(..));
                     // pass the instance in
-                    encoder.set_vertex_buffer(0, assets.instance_buffer_2d_slice(..));
+                    encoder.set_vertex_buffer(1, assets.instance_buffer_2d_slice(..));
                     // draw
                     let i = sprite.instance_id..(sprite.instance_id + 1);
                     encoder.draw(0..4, i);

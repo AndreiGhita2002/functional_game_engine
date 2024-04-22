@@ -1,4 +1,5 @@
 use std::mem;
+use wgpu::BufferAddress;
 use crate::game::entity::{Component, Entity};
 use crate::util::arena::Arena;
 use crate::util::Either;
@@ -27,6 +28,22 @@ pub fn get_pos(arena: &Arena) -> Option<Either<Transform2D, Transform3D>> {
     } else {
         // unknown size of transform found
         None
+    }
+}
+
+impl Transform2D {
+    pub fn desc<'a, const LOC: u32>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: mem::size_of::<Transform2D>() as BufferAddress,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: LOC,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+            ],
+        }
     }
 }
 

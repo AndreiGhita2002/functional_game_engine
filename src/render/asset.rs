@@ -1,10 +1,11 @@
+use std::mem;
 use std::ops::RangeBounds;
 use wgpu::{Buffer, BufferAddress, BufferDescriptor, BufferSlice, Device};
-use wgpu::util::DeviceExt;
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use crate::game::GameState;
-use crate::game::transform::{get_pos};
+use crate::game::transform::{get_pos, Transform2D, Transform3D};
 use crate::render::GPUState;
-use crate::render::model::Material;
+use crate::render::model::{Material, SpriteVertex};
 use crate::util::Either;
 use crate::util::res::Res;
 
@@ -18,6 +19,8 @@ pub struct AssetStore {
     // instances
     pub instance_buffer_2d: Buffer,
     pub instance_buffer_3d: Buffer,
+    // quad buffer
+    pub quad_vertex_buffer: Buffer,
 }
 
 impl AssetStore {
@@ -33,16 +36,21 @@ impl AssetStore {
             materials,
             instance_buffer_2d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("2D Instance Buffer"),
-                size: 0,
+                size: mem::size_of::<Transform2D>() as BufferAddress,
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
             instance_buffer_3d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("3D Instance Buffer"),
-                size: 0,
+                size: mem::size_of::<Transform3D>() as BufferAddress,
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
+            quad_vertex_buffer: gpu.device.create_buffer_init(&BufferInitDescriptor {
+                label: Some("Quad Vertex Buffer"),
+                contents: bytemuck::cast_slice(&SQUARE_MESH),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            })
         })
     }
 
@@ -53,7 +61,18 @@ impl AssetStore {
     pub fn instance_buffer_2d_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
         self.instance_buffer_2d.slice(range).clone()
     }
+
+    pub fn quad_v_buffer_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
+        self.quad_vertex_buffer.slice(range).clone()
+    }
 }
+
+const SQUARE_MESH: [SpriteVertex; 4] = [
+    SpriteVertex{ position: [0., 0.], tex_coords: [0., 0.] },
+    SpriteVertex{ position: [1., 0.], tex_coords: [1., 0.] },
+    SpriteVertex{ position: [1., 1.], tex_coords: [1., 1.] },
+    SpriteVertex{ position: [0., 1.], tex_coords: [0., 1.] }
+];
 
 impl Res<AssetStore> {
     pub fn update_from_game(&mut self, game_state: &GameState, device: &Device) {
@@ -68,7 +87,9 @@ impl Res<AssetStore> {
                 }
             }
         }
-
+        for r in raw2d.iter() {
+            print!("{:?}, ", r)
+        }
         {
             let mut store = self.write().unwrap();
             store.instance_buffer_2d = device
