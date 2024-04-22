@@ -1,4 +1,5 @@
 use std::fmt;
+use std::time::Duration;
 use crate::game::entity::{Entity, EntityChange};
 
 pub mod entity;
@@ -17,7 +18,6 @@ pub struct GameState {
 pub enum Times {
     Startup,
     SimulationTick,
-    RenderTick,
 }
 
 
@@ -30,7 +30,7 @@ impl GameState {
         }
     }
 
-    pub fn sim_tick(&mut self) {
+    pub fn sim_tick(&mut self, _delta_t: Duration) {
         for system in self.systems.iter() {
             for entity in self.entities.iter_mut() {
                 if let Some(change) = system(entity) {
@@ -54,7 +54,7 @@ impl GameState {
         self.entities.last_mut().unwrap()
     }
 
-    pub fn print_comps<T: fmt::Display>(&self, comp_label: &str) {
+    pub fn print_comps<T: fmt::Display + Clone>(&self, comp_label: &str) {
         println!("Components {}:", comp_label);
         for entity in self.entities.iter() {
             print!("{}: ", entity.id());

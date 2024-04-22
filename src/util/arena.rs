@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ptr;
+use std::{mem, ptr};
 use std::mem::transmute;
 use anyhow::anyhow;
 use mem_macros::size_of;
@@ -7,7 +7,7 @@ use mem_macros::size_of;
 // todo make thread safe
 pub struct Arena {
     data: Vec<u8>,
-    labels: HashMap<String, (usize, usize)>,
+    labels: HashMap<String, (usize, usize)>, // start to end
 }
 
 impl Arena {
@@ -18,12 +18,12 @@ impl Arena {
         }
     }
 
-    pub fn get<T>(&self, label: &str) -> Option<T> {
+    pub fn get<T: Clone>(&self, label: &str) -> Option<T> {
         let (start, end) = self.labels.get(label)?;
         let slice = self.data.as_slice().get(*start..*end)?.as_ptr();
         Some(unsafe {
             ptr::read(transmute::<*const u8, *const T>(slice))
-        })
+        }.clone())
     }
 
     pub fn get_bytes(&self, label: &str) -> Option<&[u8]> {
@@ -50,7 +50,7 @@ impl Arena {
         self.data.extend_from_slice(data);
     }
 
-    pub fn alloc<T>(&mut self, data: T, label: &str) {
+    pub fn alloc<T: Clone>(&mut self, data: T, label: &str) {
         let p: *const T = &data;
         let bytes: &[u8] = unsafe {
             let t_slice = std::slice::from_raw_parts(p, size_of!(T));
@@ -65,18 +65,17 @@ impl Arena {
             None => return Err(anyhow!("label does not exist!")),
             Some(r) => *r,
         };
-        let l = end - start;
-        if l > data.len() {
+        if end - start > data.len() {
             return Err(anyhow!("data is longer than the destination!"));
         }
-        //coping data into the vector:
-        for i in 0..l {
-            self.data.insert(start + i, data[i]);
+        //copying data into the vector:
+        for i in start..end {
+            let _ = mem::replace(self.data.get_mut(i).unwrap(), data[i - start]);
         }
         Ok(())
     }
 
-    pub fn insert<T>(&mut self, data: T, label: &str) -> anyhow::Result<()> {
+    pub fn insert<T: Clone>(&mut self, data: T, label: &str) -> anyhow::Result<()> {
         let p: *const T = &data;
         let bytes: &[u8] = unsafe {
             let t_slice = std::slice::from_raw_parts(p, size_of!(T));
@@ -95,6 +94,15 @@ impl Arena {
             out.push(key.clone());
         }
         return out;
+    }
+
+    #[allow(dead_code)]
+    pub fn get_content_string(&self) -> String {
+        let mut s = String::new();
+        for (label, range) in self.labels.iter() {
+            s += &format!("[{} <-- {} --> {}]", range.0, label, range.1);
+        }
+        s
     }
 }
 
@@ -239,9 +247,17 @@ mod tests {
         }
         // second access
         {
-            let s1: TestStruct1 = arena.get("s1").unwrap();
+            let mut s1: TestStruct1 = arena.get("s1").unwrap();
             assert_eq!(s1.i, 2);
             assert_eq!(s1.u, 74);
+            s1.i = 1;
+            s1.u = 2;
+            arena.insert(s1, "s1").unwrap()
+        }
+        {
+            let s1: TestStruct1 = arena.get("s1").unwrap();
+            assert_eq!(s1.i, 1);
+            assert_eq!(s1.u, 2);
         }
     }
 }

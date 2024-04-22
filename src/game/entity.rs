@@ -1,4 +1,4 @@
-use std::{fmt, mem};
+use std::fmt;
 use anyhow::anyhow;
 use crate::util::arena::Arena;
 
@@ -27,12 +27,12 @@ impl Entity {
         &mut self.data
     }
 
-    pub fn resolve_changes(&mut self, mut changes: Box<dyn EntityChange>) {
+    pub fn resolve_changes(&mut self, changes: Box<dyn EntityChange>) {
         // todo error catching for resolve_changes
         changes.arena_insert(self.mut_data()).unwrap();
     }
 
-    pub fn print_comp<T: fmt::Display>(&self, label: &str) -> Option<()> {
+    pub fn print_comp<T: fmt::Display + Clone>(&self, label: &str) -> Option<()> {
         let comp: T = self.data.get(label)?;
         print!("{}", comp);
         Some(())
@@ -42,27 +42,26 @@ impl Entity {
 
 /// What changes are done to an Entity?
 pub trait EntityChange {
-    fn arena_insert(&mut self, arena: &mut Arena)  -> anyhow::Result<()>;
+    fn arena_insert(self: Box<Self>, arena: &mut Arena)  -> anyhow::Result<()>;
 }
 
 /// Does a single change to the Entity
-pub struct Change<T> {
+pub struct Change<T: Clone> {
     label: String,
     data: Option<T>,
 }
 
-impl<T> EntityChange for Change<T> {
-    fn arena_insert(&mut self, arena: &mut Arena) -> anyhow::Result<()> {
+impl<T: Clone> EntityChange for Change<T> {
+    fn arena_insert(self: Box<Self>, arena: &mut Arena) -> anyhow::Result<()> {
         if self.data.is_none() {
             return Err(anyhow!("Change has no data!"));
         }
-        let mut data: Option<T> = None;
-        mem::swap(&mut self.data, &mut data);
-        arena.insert(data.unwrap(), &self.label)
+        let (label, data) = (self.label, self.data.unwrap());
+        arena.insert::<T>(data, &label)
     }
 }
 
-impl<T> Change<T> {
+impl<T: Clone> Change<T> {
     pub fn new(change: T, label: &str) -> Box<Self> {
         Box::new(Self {
             label: String::from(label),

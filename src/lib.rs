@@ -1,3 +1,4 @@
+use std::time::{Duration, Instant};
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -29,6 +30,10 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
     let asset_store = AssetStore::new(&gpu_state, Some(to_load));
     let mut sprite_renderer = SpriteRenderer::new(&gpu_state, asset_store.clone());
 
+    // time keeping:
+    let sim_tick_duration: Duration = Duration::from_secs_f32(1.0 / 30.0);
+    let mut prev_time = Instant::now();
+
     event_loop.run(move |event, window_target| {
         match event {
             Event::WindowEvent {
@@ -46,7 +51,15 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
                 // You only need to call this if you've determined that you need to redraw in
                 // applications which do not always need to. Applications that redraw continuously
                 // can render here instead.
-                game_state.sim_tick();
+                let now = Instant::now();
+                let delta = now - prev_time;
+                if delta >= sim_tick_duration {
+                    game_state.sim_tick(delta);
+                    // game_state.print_comps::<Transform2D>("pos");
+                    // game_state.print_comps::<Sprite>("sprite");
+                    sprite_renderer.pre_render(&gpu_state, &game_state);
+                    prev_time = now;
+                }
                 gpu_state.window().request_redraw();
             },
             Event::WindowEvent {
@@ -58,7 +71,6 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
                 // It's preferable for applications that do not render continuously to render in
                 // this event rather than in AboutToWait, since rendering in here allows
                 // the program to gracefully handle redraws requested by the OS.
-                sprite_renderer.pre_render(&gpu_state, &game_state);
                 gpu_state.render(&sprite_renderer);
             },
             _ => ()

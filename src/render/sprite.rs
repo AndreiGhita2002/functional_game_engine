@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
 use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
 use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
@@ -8,6 +9,7 @@ use crate::render::{GPUState, Renderer};
 use crate::render::model::{SpriteVertex, Vertex};
 use crate::util::res::Res;
 
+#[derive(Copy, Clone)]
 pub struct Sprite {
     material_id: MaterialId,
     instance_id: u32,
@@ -117,7 +119,7 @@ impl Renderer for SpriteRenderer {
                         view,
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
+                            load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
                             store: wgpu::StoreOp::Store,
                         },
                     })],
@@ -138,11 +140,18 @@ impl Component for Sprite {
         // make some kinda entity id to instance id mapping in AssetStore
         self.instance_id = entity.id() as u32;
         entity.mut_data().alloc(self, "sprite");
+        eprintln!("{}" , entity.data().get_content_string());
     }
 }
 
 impl Sprite {
     pub fn new(material_id: MaterialId) -> Self {
         Sprite { material_id, instance_id: 0 }
+    }
+}
+
+impl Display for Sprite {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Sprite[mat={},inst={}", self.material_id, self.instance_id)
     }
 }

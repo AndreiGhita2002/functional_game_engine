@@ -32,6 +32,14 @@ impl AssetStore {
                 materials.push(mat);
             }
         }
+        const SQUARE_MESH: [SpriteVertex; 6] = [
+            SpriteVertex{ position: [0., 0.], tex_coords: [1., 1.] },
+            SpriteVertex{ position: [1., 0.], tex_coords: [0., 1.] },
+            SpriteVertex{ position: [1., 1.], tex_coords: [0., 0.] },
+            SpriteVertex{ position: [0., 0.], tex_coords: [1., 1.] },
+            SpriteVertex{ position: [1., 1.], tex_coords: [0., 0.] },
+            SpriteVertex{ position: [0., 1.], tex_coords: [1., 0.] },
+        ];
         Res::new(AssetStore {
             materials,
             instance_buffer_2d: gpu.device.create_buffer(&BufferDescriptor {
@@ -59,22 +67,13 @@ impl AssetStore {
     }
 
     pub fn instance_buffer_2d_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
-        self.instance_buffer_2d.slice(range).clone()
+        self.instance_buffer_2d.slice(range)
     }
 
     pub fn quad_v_buffer_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
-        self.quad_vertex_buffer.slice(range).clone()
+        self.quad_vertex_buffer.slice(range)
     }
 }
-
-const SQUARE_MESH: [SpriteVertex; 6] = [
-    SpriteVertex{ position: [0., 0.], tex_coords: [1., 1.] },
-    SpriteVertex{ position: [1., 0.], tex_coords: [0., 1.] },
-    SpriteVertex{ position: [1., 1.], tex_coords: [0., 0.] },
-    SpriteVertex{ position: [0., 0.], tex_coords: [1., 1.] },
-    SpriteVertex{ position: [1., 1.], tex_coords: [0., 0.] },
-    SpriteVertex{ position: [0., 1.], tex_coords: [1., 0.] },
-];
 
 impl Res<AssetStore> {
     pub fn update_from_game(&mut self, game_state: &GameState, device: &Device) {
@@ -92,13 +91,13 @@ impl Res<AssetStore> {
         {
             let mut store = self.write().unwrap();
             store.instance_buffer_2d = device
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                .create_buffer_init(&BufferInitDescriptor {
                     label: Some("2D Instance Buffer"),
                     contents: bytemuck::cast_slice(&raw2d),
                     usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 });
             store.instance_buffer_3d = device
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                .create_buffer_init(&BufferInitDescriptor {
                     label: Some("3D Instance Buffer"),
                     contents: bytemuck::cast_slice(&raw3d),
                     usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,

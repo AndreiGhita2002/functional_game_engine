@@ -14,18 +14,15 @@ struct VertexOutput {
 
 @vertex
 fn vs_main(
-//    @builtin(vertex_index) i: u32,
     vertex: VertexInput,
     instance: InstanceInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-//    let int_vert_pos = vec2<u32>(
-//        ((i >> 0) & 1) ^ ((i >> 1) & 1),
-//        (i >> 1) & 1,
-//    );
-//    let vert_pos = vec2<f32>(int_vert_pos);
-    out.tex_pos = vertex.tex_coords;
+
     out.position = vec4<f32>(vertex.position + instance.offset, 0.0, 1.0);
+
+    out.tex_pos = vertex.tex_coords;
+
     return out;
 }
 
@@ -37,6 +34,5 @@ var s_diffuse: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-//    return vec4<f32>(vertex.position, 0.0, 1.0);
     return textureSample(t_diffuse, s_diffuse, in.tex_pos);
 }

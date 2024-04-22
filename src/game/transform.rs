@@ -1,15 +1,16 @@
+use std::fmt::{Display, Formatter};
 use std::mem;
 use wgpu::BufferAddress;
 use crate::game::entity::{Component, Entity};
 use crate::util::arena::Arena;
 use crate::util::Either;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Transform2D {
     pub pos: [f32; 2]
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Transform3D {
     pub pos: [f32; 3]
 }
@@ -56,5 +57,11 @@ impl Component for Transform2D {
 impl Component for Transform3D {
     fn to_entity(self, entity: &mut Entity) {
         entity.mut_data().alloc(self, "pos")
+    }
+}
+
+impl Display for Transform2D {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}, {}]", self.pos[0], self.pos[1])
     }
 }
