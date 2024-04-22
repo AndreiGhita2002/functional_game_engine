@@ -91,7 +91,7 @@ impl Renderer for SpriteRenderer {
                     encoder.set_vertex_buffer(1, assets.instance_buffer_2d_slice(..));
                     // draw
                     let i = sprite.instance_id..(sprite.instance_id + 1);
-                    encoder.draw(0..4, i);
+                    encoder.draw(0..6, i);
                     // output the bundle
                     let bundle = encoder.finish(&RenderBundleDescriptor {
                         label: Some("sprite bundle"),

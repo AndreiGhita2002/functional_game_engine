@@ -67,11 +67,13 @@ impl AssetStore {
     }
 }
 
-const SQUARE_MESH: [SpriteVertex; 4] = [
-    SpriteVertex{ position: [0., 0.], tex_coords: [0., 0.] },
-    SpriteVertex{ position: [1., 0.], tex_coords: [1., 0.] },
-    SpriteVertex{ position: [1., 1.], tex_coords: [1., 1.] },
-    SpriteVertex{ position: [0., 1.], tex_coords: [0., 1.] }
+const SQUARE_MESH: [SpriteVertex; 6] = [
+    SpriteVertex{ position: [0., 0.], tex_coords: [1., 1.] },
+    SpriteVertex{ position: [1., 0.], tex_coords: [0., 1.] },
+    SpriteVertex{ position: [1., 1.], tex_coords: [0., 0.] },
+    SpriteVertex{ position: [0., 0.], tex_coords: [1., 1.] },
+    SpriteVertex{ position: [1., 1.], tex_coords: [0., 0.] },
+    SpriteVertex{ position: [0., 1.], tex_coords: [1., 0.] },
 ];
 
 impl Res<AssetStore> {
@@ -86,9 +88,6 @@ impl Res<AssetStore> {
                     Either::That(t_3d) => {raw3d.push(t_3d.pos)}
                 }
             }
-        }
-        for r in raw2d.iter() {
-            print!("{:?}, ", r)
         }
         {
             let mut store = self.write().unwrap();
