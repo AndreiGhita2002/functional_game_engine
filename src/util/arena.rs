@@ -85,6 +85,10 @@ impl Arena {
         self.insert_raw(bytes, label)
     }
 
+    pub fn has(&self, label: &str) -> bool {
+        self.labels.get(label).is_some()
+    }
+
     pub fn labels(&self) -> Vec<String> {
         let mut out = Vec::new();
         for key in self.labels.keys() {
