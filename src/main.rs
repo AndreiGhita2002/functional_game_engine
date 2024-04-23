@@ -26,16 +26,6 @@ fn main() {
         e2.mut_data().alloc(Transform2D { pos: [-1., -1.] }, "pos");
         Sprite::new(0).to_entity(&mut e2);
     }
-    // {
-    //     let mut e3 = game_state.new_entity_mut();
-    //     e3.mut_data().alloc(Transform2D { pos: [1., -0.3] }, "pos");
-    //     Sprite::new(0).to_entity(&mut e3);
-    // }
-    // {
-    //     let mut e4 = game_state.new_entity_mut();
-    //     e4.mut_data().alloc(Transform2D { pos: [-1., -0.5] }, "pos");
-    //     Sprite::new(0).to_entity(&mut e4);
-    // }
 
     game_state.systems.push(|entity| {
         if entity.data().has("tag") {
@@ -53,19 +43,6 @@ fn main() {
             None
         }
     });
-
-    // game_state.systems.push(|entity| {
-    //     if let Some(mut p) = entity.data().get::<Transform2D>("pos") {
-    //         if p.pos[0] > 1.0 {
-    //             p.pos[0] = -1.;
-    //         } else {
-    //             p.pos[0] += 0.1;
-    //         }
-    //         Some(Change::new(p, "pos"))
-    //     } else {
-    //         None
-    //     }
-    // });
 
     let to_load = AssetsToLoad {
         texture_files: vec!["angry_cat.png".to_string()]
