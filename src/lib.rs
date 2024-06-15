@@ -14,8 +14,6 @@ pub mod util;
 pub mod render;
 mod resources;
 
-
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
     // Window setup
     env_logger::init();

@@ -10,6 +10,7 @@ struct Tag {
     _i: u32,
 }
 
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 fn main() {
     println!("hello world!!");
 
