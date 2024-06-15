@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use wgpu::Device;
 use wgpu::util::DeviceExt;
+
 use crate::{GPUState, resources};
 use crate::render::texture::Texture;
 

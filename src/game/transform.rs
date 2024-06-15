@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::mem;
+
 use wgpu::BufferAddress;
+
 use crate::game::entity::{Component, Entity};
 use crate::util::arena::Arena;
 use crate::util::Either;

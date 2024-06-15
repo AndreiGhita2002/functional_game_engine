@@ -1,12 +1,14 @@
 use std::time::{Duration, Instant};
+
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
+
 use crate::game::GameState;
-use crate::render::asset::{AssetsToLoad, AssetStore};
 use crate::render::{GPUState, Renderer};
+use crate::render::asset::{AssetsToLoad, AssetStore};
 use crate::render::sprite::SpriteRenderer;
 
 pub mod game;

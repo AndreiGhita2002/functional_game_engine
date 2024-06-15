@@ -1,5 +1,7 @@
 use std::fmt;
+
 use anyhow::anyhow;
+
 use crate::util::arena::Arena;
 
 pub struct Entity {

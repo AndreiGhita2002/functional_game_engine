@@ -1,5 +1,6 @@
 use std::fmt;
 use std::time::Duration;
+
 use crate::game::entity::{Entity, EntityChange};
 
 pub mod entity;

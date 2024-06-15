@@ -1,6 +1,7 @@
-use std::collections::HashMap;
 use std::{mem, ptr};
+use std::collections::HashMap;
 use std::mem::transmute;
+
 use anyhow::anyhow;
 use mem_macros::size_of;
 
@@ -109,6 +110,7 @@ impl Arena {
 #[cfg(test)]
 mod tests {
     use bytemuck::{Pod, Zeroable};
+
     use crate::util::arena::*;
 
     #[repr(C)]

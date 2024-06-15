@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
+
 use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
+
 use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
 use crate::game::transform::Transform2D;
-use crate::render::asset::{AssetStore, MaterialId};
 use crate::render::{GPUState, Renderer};
+use crate::render::asset::{AssetStore, MaterialId};
 use crate::render::model::{SpriteVertex, Vertex};
 use crate::util::res::Res;
 

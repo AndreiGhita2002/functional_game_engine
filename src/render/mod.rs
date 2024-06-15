@@ -1,5 +1,6 @@
 use wgpu::{Queue, SurfaceTargetUnsafe, TextureFormat, TextureView};
 use winit::window::Window;
+
 use crate::game::GameState;
 
 pub mod sprite;

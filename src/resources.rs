@@ -1,8 +1,9 @@
 use std::io::{BufReader, Cursor};
 
-use cfg_if::cfg_if;
 use wgpu::{BindGroupLayout, Device, Queue};
 use wgpu::util::DeviceExt;
+
+use cfg_if::cfg_if;
 
 use crate::render::{model, texture};
 use crate::render::model::{Material, Mesh, ModelVertex, SpriteVertex};

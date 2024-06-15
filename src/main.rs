@@ -1,9 +1,9 @@
-use functional_game_engine::run;
 use functional_game_engine::game::entity::{Change, Component};
 use functional_game_engine::game::GameState;
 use functional_game_engine::game::transform::Transform2D;
 use functional_game_engine::render::asset::AssetsToLoad;
 use functional_game_engine::render::sprite::Sprite;
+use functional_game_engine::run;
 
 #[derive(Copy, Clone)]
 struct Tag {

@@ -1,7 +1,9 @@
 use std::mem;
 use std::ops::RangeBounds;
+
 use wgpu::{Buffer, BufferAddress, BufferDescriptor, BufferSlice, Device};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+
 use crate::game::GameState;
 use crate::game::transform::{get_pos, Transform2D, Transform3D};
 use crate::render::GPUState;
