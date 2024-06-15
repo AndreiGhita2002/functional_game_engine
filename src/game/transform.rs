@@ -4,7 +4,7 @@ use std::mem;
 use wgpu::BufferAddress;
 
 use crate::game::entity::{Component, Entity};
-use crate::util::arena::Arena;
+use crate::util::arena::ComponentArena;
 use crate::util::Either;
 
 #[derive(Clone, Debug)]
@@ -17,7 +17,7 @@ pub struct Transform3D {
     pub pos: [f32; 3]
 }
 
-pub fn get_pos(arena: &Arena) -> Option<Either<Transform2D, Transform3D>> {
+pub fn get_pos(arena: &ComponentArena) -> Option<Either<Transform2D, Transform3D>> {
     let l = arena.get_length("pos")?;
 
     if l == mem::size_of::<Transform2D>() {

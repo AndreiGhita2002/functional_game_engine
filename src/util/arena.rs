@@ -6,14 +6,14 @@ use anyhow::anyhow;
 use mem_macros::size_of;
 
 // todo make thread safe
-pub struct Arena {
+pub struct ComponentArena {
     data: Vec<u8>,
     labels: HashMap<String, (usize, usize)>, // start to end
 }
 
-impl Arena {
+impl ComponentArena {
     pub fn new() -> Self {
-        Arena {
+        ComponentArena {
             data: Vec::new(),
             labels: HashMap::new(),
         }
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn arena_raw_alloc() {
-        let mut arena = Arena::new();
+        let mut arena = ComponentArena::new();
 
         let data = [1u8, 2u8, 3u8, 4u8];  // 1,2,3,4
 
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn arena_byte_access() {
-        let mut arena = Arena::new();
+        let mut arena = ComponentArena::new();
 
         // allocation
         {
@@ -176,7 +176,7 @@ mod tests {
 
     #[test]
     fn arena_generic_access() {
-        let mut arena = Arena::new();
+        let mut arena = ComponentArena::new();
 
         // allocation
         {
@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn arena_insert() {
-        let mut arena = Arena::new();
+        let mut arena = ComponentArena::new();
 
         // allocation
         {
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn double_get() {
-        let mut arena = Arena::new();
+        let mut arena = ComponentArena::new();
 
         // allocation
         {

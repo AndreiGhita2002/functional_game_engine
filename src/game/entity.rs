@@ -1,19 +1,20 @@
+use std::collections::HashMap;
 use std::fmt;
 
 use anyhow::anyhow;
 
-use crate::util::arena::Arena;
+use crate::util::arena::ComponentArena;
 
 pub struct Entity {
     id: u64,
-    data: Arena,
+    data: ComponentArena,
 }
 
 impl Entity {
     pub fn new(id: u64) -> Self {
         Entity {
             id,
-            data: Arena::new(),
+            data: ComponentArena::new(),
         }
     }
 
@@ -21,11 +22,11 @@ impl Entity {
         self.id
     }
 
-    pub fn data(&self) -> &Arena {
+    pub fn data(&self) -> &ComponentArena {
         &self.data
     }
 
-    pub fn mut_data(&mut self) -> &mut Arena {
+    pub fn mut_data(&mut self) -> &mut ComponentArena {
         &mut self.data
     }
 
@@ -44,7 +45,7 @@ impl Entity {
 
 /// What changes are done to an Entity?
 pub trait EntityChange {
-    fn arena_insert(self: Box<Self>, arena: &mut Arena)  -> anyhow::Result<()>;
+    fn arena_insert(self: Box<Self>, arena: &mut ComponentArena) -> anyhow::Result<()>;
 }
 
 /// Does a single change to the Entity
@@ -54,7 +55,7 @@ pub struct Change<T: Clone> {
 }
 
 impl<T: Clone> EntityChange for Change<T> {
-    fn arena_insert(self: Box<Self>, arena: &mut Arena) -> anyhow::Result<()> {
+    fn arena_insert(self: Box<Self>, arena: &mut ComponentArena) -> anyhow::Result<()> {
         if self.data.is_none() {
             return Err(anyhow!("Change has no data!"));
         }
