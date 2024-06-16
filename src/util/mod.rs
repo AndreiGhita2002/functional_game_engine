@@ -1,11 +1,9 @@
 use std::intrinsics::transmute;
 use std::ptr;
-use bytemuck::from_bytes;
 use mem_macros::size_of;
 
 pub mod arena;
 pub mod res;
-pub mod mutators;
 
 pub enum Either<T1, T2> {
     This(T1),
@@ -31,7 +29,7 @@ impl<T> Byteable for T {
 
     #[inline]
     fn from_vec_bytes(vec: Vec<u8>) -> Self {
-        from_bytes(vec.as_slice())
+        T::from_bytes(vec.as_slice())
     }
 
     fn into_bytes(self) -> Vec<u8> {
