@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::mem;
+use cgmath::num_traits::Pow;
 
 use wgpu::BufferAddress;
 
@@ -7,14 +8,34 @@ use crate::game::entity::{Component, Entity};
 use crate::util::arena::ComponentArena;
 use crate::util::Either;
 
-#[derive(Clone, Debug)]
-pub struct Transform2D {
+#[derive(Copy, Clone, Debug)]
+pub struct Transform2D {  //todo: Describe size and rotation!
     pub pos: [f32; 2]
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Transform3D {
     pub pos: [f32; 3]
+}
+
+impl Transform2D {
+    pub fn desc<'a, const LOC: u32>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: mem::size_of::<Transform2D>() as BufferAddress,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: LOC,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+            ],
+        }
+    }
+
+    pub fn dist(t1: Transform2D, t2: Transform2D) -> f32 {
+        return f32::sqrt((t2.pos[0] - t1.pos[0]).pow(2) + (t2.pos[1] - t1.pos[1]).pow(2))
+    }
 }
 
 pub fn get_pos(arena: &ComponentArena) -> Option<Either<Transform2D, Transform3D>> {
@@ -31,22 +52,6 @@ pub fn get_pos(arena: &ComponentArena) -> Option<Either<Transform2D, Transform3D
     } else {
         // unknown size of transform found
         None
-    }
-}
-
-impl Transform2D {
-    pub fn desc<'a, const LOC: u32>() -> wgpu::VertexBufferLayout<'a> {
-        wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<Transform2D>() as BufferAddress,
-            step_mode: wgpu::VertexStepMode::Instance,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: LOC,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-            ],
-        }
     }
 }
 

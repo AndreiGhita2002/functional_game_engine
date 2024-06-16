@@ -6,11 +6,13 @@ use crate::game::entity::{Entity, EntityChange};
 pub mod entity;
 pub mod transform;
 
-type System = fn(&Entity) -> Option<Box<dyn EntityChange>>;
+type LinearSystem = fn(&Entity) -> Option<Box<dyn EntityChange>>;
+type QuadraticSystem = fn(&Entity, &Entity) -> Option<Box<dyn EntityChange>>;
 
 pub struct GameState {
     pub entities: Vec<Entity>,
-    pub systems: Vec<System>,
+    pub linear_systems: Vec<LinearSystem>,
+    pub quadratic_systems: Vec<QuadraticSystem>,
     next_id: u64
 }
 
@@ -26,17 +28,43 @@ impl GameState {
     pub fn new() -> Self {
         GameState {
             entities: Vec::new(),
-            systems: Vec::new(),
+            // systems that are applied on single entities
+            linear_systems: Vec::new(),
+            // systems that are applied on pairs of entities
+            quadratic_systems: Vec::new(),
             next_id: 0,
         }
     }
 
     pub fn sim_tick(&mut self, _delta_t: Duration) {
-        for system in self.systems.iter() {
-            for entity in self.entities.iter_mut() {
-                if let Some(change) = system(entity) {
-                    entity.resolve_changes(change);
+        let mut changes: Vec<(usize, Box<dyn EntityChange>)> = Vec::new();
+
+        for (i, entity) in self.entities.iter().enumerate() {
+            // first we apply every linear system to it
+            for lin_sys in self.linear_systems.iter() {
+                if let Some(change) = lin_sys(entity) {
+                    changes.push((i, change));
                 }
+            }
+
+            // then we loop through every other entity
+            for other in self.entities.iter() {
+                if entity.id() != other.id() {
+                    // apply every quadratic system on this pair
+                    for quad_sys in self.quadratic_systems.iter() {
+                        if let Some(change) = quad_sys(entity, other) {
+                            // changes are only applied to the first entity
+                            changes.push((i, change));
+                        }
+                    }
+                }
+            }
+        }
+
+        // now we apply the changes
+        for (i, change) in changes {
+            if let Some(entity) = self.entities.get_mut(i) {
+                entity.resolve_changes(change);
             }
         }
     }

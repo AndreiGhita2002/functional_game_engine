@@ -28,7 +28,7 @@ fn main() {
         Sprite::new(0).to_entity(&mut e2);
     }
 
-    game_state.systems.push(|entity| {
+    game_state.linear_systems.push(|entity| {
         if entity.data().has("tag") {
             if let Some(mut p) = entity.data().get::<Transform2D>("pos") {
                 if p.pos[0] > 1.0 {
@@ -44,6 +44,21 @@ fn main() {
             None
         }
     });
+
+    // example quadratic system:
+    /* // spams the console a lot
+    game_state.quadratic_systems.push(|entity, other| {
+        if let Some(pos1) = entity.data().get::<Transform2D>("pos") {
+            if let Some(pos2) = other.data().get::<Transform2D>("pos") {
+                if Transform2D::dist(pos1, pos2) <= 1.0 {
+                    println!("Entity:{} and Entity:{} are close!", entity.id(), other.id());
+                }
+            }
+        }
+
+        None
+    });
+    */
 
     let to_load = AssetsToLoad {
         texture_files: vec!["angry_cat.png".to_string()]
