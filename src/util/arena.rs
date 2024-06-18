@@ -6,6 +6,8 @@ use anyhow::anyhow;
 use mem_macros::size_of;
 
 // todo make thread safe
+// todo possible memory leak: when arena is deallocated,
+//  any resource referenced a data block will not be deallocated
 pub struct ComponentArena {
     data: Vec<u8>,
     labels: HashMap<String, (usize, usize)>, // start to end
