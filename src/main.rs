@@ -1,6 +1,6 @@
 use functional_game_engine::game::entity::{Change, Component};
 use functional_game_engine::game::GameState;
-use functional_game_engine::game::transform::Transform2D;
+use functional_game_engine::game::transform::{Transform2D, TRANSFORM_COMP_NAME};
 use functional_game_engine::render::asset::AssetsToLoad;
 use functional_game_engine::render::sprite::Sprite;
 use functional_game_engine::run;
@@ -18,27 +18,32 @@ fn main() {
 
     {
         let mut e1 = game_state.new_entity_mut();
-        e1.mut_data().alloc(Transform2D { pos: [-1., -0.2] }, "pos");
+        Transform2D { pos: [-1., -0.2], size: [0.5, 0.5], rot: 0. }.to_entity(e1);
         e1.mut_data().alloc(Tag { _i: 10 }, "tag");
         Sprite::new(0).to_entity(&mut e1);
     }
     {
         let mut e2 = game_state.new_entity_mut();
-        e2.mut_data().alloc(Transform2D { pos: [-1., -1.] }, "pos");
+        Transform2D { pos: [-1., -1.], size: [1.0, 0.5], rot: 1.0 }.to_entity(e2);
         Sprite::new(0).to_entity(&mut e2);
     }
 
     game_state.linear_systems.push(|entity| {
-        if entity.data().has("tag") {
-            if let Some(mut p) = entity.data().get::<Transform2D>("pos") {
+        if let Some(mut p) = entity.data().get::<Transform2D>(TRANSFORM_COMP_NAME) {
+            if entity.data().has("tag") {
                 if p.pos[0] > 1.0 {
                     p.pos[0] = -1.;
                 } else {
                     p.pos[0] += 0.01;
                 }
-                Some(Change::new(p, "pos"))
+                Some(Change::new(p, TRANSFORM_COMP_NAME))
             } else {
-                None
+                if p.rot > 2.0 {
+                    p.rot = 0.0;
+                } else {
+                    p.rot += 0.01;
+                }
+                Some(Change::new(p, TRANSFORM_COMP_NAME))
             }
         } else {
             None

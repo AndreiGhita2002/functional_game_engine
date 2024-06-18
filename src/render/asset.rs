@@ -5,7 +5,7 @@ use wgpu::{Buffer, BufferAddress, BufferDescriptor, BufferSlice, Device};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use crate::game::GameState;
-use crate::game::transform::{get_pos, Transform2D, Transform3D};
+use crate::game::transform::{get_pos, RawTransform2D, RawTransform3D};
 use crate::render::GPUState;
 use crate::render::model::{Material, SpriteVertex};
 use crate::util::Either;
@@ -46,13 +46,13 @@ impl AssetStore {
             materials,
             instance_buffer_2d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("2D Instance Buffer"),
-                size: mem::size_of::<Transform2D>() as BufferAddress,
+                size: mem::size_of::<RawTransform2D>() as BufferAddress,
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
             instance_buffer_3d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("3D Instance Buffer"),
-                size: mem::size_of::<Transform3D>() as BufferAddress,
+                size: mem::size_of::<RawTransform3D>() as BufferAddress,
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
@@ -85,8 +85,8 @@ impl Res<AssetStore> {
         for entity in game_state.entities.iter() {
             if let Some(pos) = get_pos(entity.data()) {
                 match pos {
-                    Either::This(t_2d) => {raw2d.push(t_2d.pos)}
-                    Either::That(t_3d) => {raw3d.push(t_3d.pos)}
+                    Either::This(t_2d) => {raw2d.push(t_2d.to_raw())}
+                    Either::That(t_3d) => {raw3d.push(t_3d.to_raw())}
                 }
             }
         }

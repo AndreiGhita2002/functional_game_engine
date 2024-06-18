@@ -5,7 +5,7 @@ use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
 
 use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
-use crate::game::transform::Transform2D;
+use crate::game::transform::RawTransform2D;
 use crate::render::{GPUState, Renderer};
 use crate::render::asset::{AssetStore, MaterialId};
 use crate::render::model::{SpriteVertex, Vertex};
@@ -42,7 +42,7 @@ impl SpriteRenderer {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[SpriteVertex::desc(), Transform2D::desc::<2>()],
+                buffers: &[SpriteVertex::desc(), RawTransform2D::desc::<2>()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,

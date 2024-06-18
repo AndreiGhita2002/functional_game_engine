@@ -5,6 +5,8 @@ struct VertexInput {
 
 struct InstanceInput {
     @location(2) offset: vec2<f32>,
+    @location(3) matrix_0: vec2<f32>,
+    @location(4) matrix_1: vec2<f32>,
 };
 
 struct VertexOutput {
@@ -18,8 +20,14 @@ fn vs_main(
     instance: InstanceInput,
 ) -> VertexOutput {
     var out: VertexOutput;
+    let sprite_matrix = mat2x2<f32>(
+        instance.matrix_0,
+        instance.matrix_1,
+    );
 
-    out.position = vec4<f32>(vertex.position + instance.offset, 0.0, 1.0);
+    let p = sprite_matrix * (vertex.position + instance.offset);
+
+    out.position = vec4<f32>(p, 0.0, 1.0);
 
     out.tex_pos = vertex.tex_coords;
 
