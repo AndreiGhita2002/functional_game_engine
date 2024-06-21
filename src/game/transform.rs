@@ -4,6 +4,7 @@ use std::mem;
 
 use bytemuck::{Pod, Zeroable};
 use cgmath::num_traits::Pow;
+use cgmath::{Matrix4, Quaternion, Vector3};
 use mem_macros::size_of;
 use wgpu::BufferAddress;
 
@@ -22,7 +23,9 @@ pub struct Transform2D {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Transform3D {
-    pub pos: [f32; 3]
+    pub pos: [f32; 3],
+    pub size: [f32; 3],
+    pub rotation: Quaternion<f32>,
 }
 
 impl Transform2D {
@@ -50,13 +53,11 @@ impl Transform3D {
     }
 
     pub fn to_raw(&self) -> RawTransform3D {
-        // let cos_r = self.rot.cos();
-        // let sin_r = self.rot.sin();
-        // return RawTransform3D {
-        //     model: (Matrix4::from_translation(self.position) * Matrix4::from(self.rotation)).into(),
-        //     normal: cgmath::Matrix3::from(self.rotation).into(),
-        // }
-        todo!()
+        return RawTransform3D {
+            model: (Matrix4::from_translation(Vector3::from(self.pos))
+                * Matrix4::from(self.rotation)).into(),
+            normal: cgmath::Matrix3::from(self.rotation).into(),
+        }
     }
 }
 
