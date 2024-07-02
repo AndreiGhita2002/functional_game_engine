@@ -6,7 +6,7 @@ use crate::util::arena::ComponentArena;
 
 pub struct Entity {
     id: u64,
-    data: ComponentArena,
+    data: ComponentArena,  //TODO: components should be stored and looped over together
 }
 
 impl Entity {

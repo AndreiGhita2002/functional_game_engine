@@ -6,8 +6,13 @@ build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# TARGETS
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[[example]]
+name = "cat_sprites"
+crate-type = ["bin"]
 
 [build-dependencies]
 anyhow = "1.0"
