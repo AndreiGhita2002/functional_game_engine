@@ -9,12 +9,11 @@ use winit::{
 use crate::asset::{AssetsToLoad, AssetStore};
 use crate::game::GameState;
 use crate::render::{GPUState, Renderer};
-use crate::render::sprite::SpriteRenderer;
+use crate::render::sprite_render::SpriteRenderer;
 
 pub mod game;
 pub mod util;
 pub mod render;
-mod resources;
 pub mod asset;
 
 pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {

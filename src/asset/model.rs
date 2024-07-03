@@ -3,10 +3,10 @@ use std::fmt::Debug;
 use wgpu::Device;
 use wgpu::util::DeviceExt;
 
-use crate::{GPUState, resources};
-use crate::asset::{AssetStore, MaterialId};
+use crate::{GPUState};
+use crate::asset::{AssetStore, MaterialId, resources};
 use crate::render::{ModelVertex, Vertex};
-use crate::render::texture::Texture;
+use crate::asset::texture::Texture;
 use crate::util::res::Res;
 
 pub struct Material {

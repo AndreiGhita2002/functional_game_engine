@@ -4,8 +4,9 @@ use cfg_if::cfg_if;
 use wgpu::{BindGroupLayout, Device, Queue};
 use wgpu::util::DeviceExt;
 
-use crate::render::{model, ModelVertex, texture};
-use crate::render::model::{Material, Mesh};
+use crate::asset::model::{Material, Mesh};
+use crate::asset::{model, texture};
+use crate::render::ModelVertex;
 
 #[cfg(target_arch = "wasm32")]
 fn format_url(file_name: &str) -> reqwest::Url {

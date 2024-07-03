@@ -3,7 +3,7 @@ use functional_game_engine::game::entity::{Change, Component};
 use functional_game_engine::game::GameState;
 use functional_game_engine::game::transform::{Transform2D, Transform3D, TRANSFORM_COMP_NAME};
 use functional_game_engine::asset::AssetsToLoad;
-use functional_game_engine::render::sprite::SpriteComponent;
+use functional_game_engine::render::sprite_render::SpriteComponent;
 use functional_game_engine::run;
 
 #[derive(Copy, Clone)]

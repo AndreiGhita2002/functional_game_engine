@@ -7,9 +7,13 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use crate::game::GameState;
 use crate::game::transform::{get_pos, RawTransform2D, RawTransform3D};
 use crate::render::{GPUState, SpriteVertex};
-use crate::render::model::{Material, Model};
 use crate::util::Either;
 use crate::util::res::Res;
+use model::{Material, Model};
+
+pub mod model;
+pub mod resources;
+pub mod texture;
 
 pub type MaterialId = usize;
 

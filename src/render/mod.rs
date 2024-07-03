@@ -5,9 +5,7 @@ use winit::window::Window;
 
 use crate::game::GameState;
 
-pub mod sprite;
-pub mod texture;
-pub mod model;
+pub mod sprite_render;
 pub mod model_render;
 
 pub trait Vertex: bytemuck::Pod + bytemuck::Zeroable + Copy + Clone + Debug {
@@ -89,14 +87,14 @@ pub struct BindGroups {
 
 #[allow(dead_code)]
 pub struct GPUState<'w> {
-    surface: wgpu::Surface<'w>,
+    pub surface: wgpu::Surface<'w>,
     pub surface_format: TextureFormat,
     pub device: wgpu::Device,
-    queue: Queue,
-    config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
-    window: Window,
-    bind_groups: BindGroups,
+    pub queue: Queue,
+    pub config: wgpu::SurfaceConfiguration,
+    pub size: winit::dpi::PhysicalSize<u32>,
+    pub window: Window,
+    pub bind_groups: BindGroups,
 }
 
 impl GPUState<'_> {

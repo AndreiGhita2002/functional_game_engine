@@ -1,10 +1,10 @@
 use wgpu::{RenderBundle, RenderPipeline, TextureView};
 
 use crate::asset::AssetStore;
+use crate::asset::model::Model;
 use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
 use crate::render::{GPUState, Renderer};
-use crate::render::model::Model;
 use crate::util::res::Res;
 
 #[derive(Clone)]
