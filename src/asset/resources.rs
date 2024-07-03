@@ -5,7 +5,7 @@ use wgpu::{BindGroupLayout, Device, Queue};
 use wgpu::util::DeviceExt;
 
 use crate::asset::model::{Material, Mesh};
-use crate::asset::{model, texture};
+use crate::asset::{AssetStore, model, texture};
 use crate::render::ModelVertex;
 
 #[cfg(target_arch = "wasm32")]
@@ -169,7 +169,7 @@ pub async fn load_model(
         })
         .collect::<Vec<_>>();
 
-    Ok(model::Model { meshes })
+    Ok(model::Model { meshes, materials })
 }
 
 

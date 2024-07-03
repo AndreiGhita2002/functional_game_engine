@@ -27,7 +27,7 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
 
     let mut gpu_state = GPUState::new(window).await;
 
-    let asset_store = AssetStore::new(&gpu_state, Some(to_load));
+    let asset_store = AssetStore::new(&gpu_state, to_load);
     let mut sprite_renderer = SpriteRenderer::new(&gpu_state, asset_store.clone());
 
     // time keeping:

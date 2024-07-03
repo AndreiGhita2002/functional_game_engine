@@ -4,10 +4,9 @@ use wgpu::Device;
 use wgpu::util::DeviceExt;
 
 use crate::{GPUState};
-use crate::asset::{AssetStore, MaterialId, resources};
+use crate::asset::{MaterialId, resources};
 use crate::render::{ModelVertex, Vertex};
 use crate::asset::texture::Texture;
-use crate::util::res::Res;
 
 pub struct Material {
     pub name: String,
@@ -17,6 +16,7 @@ pub struct Material {
 
 pub struct Model {
     pub meshes: Vec<Mesh>,
+    pub materials: Vec<Material>
 }
 
 pub struct Mesh {
@@ -32,7 +32,7 @@ impl Mesh {
         vertices: Vec<T>,
         indices: Vec<u32>,
         name: &str,
-        material: Option<MaterialId>,
+        material: usize,
         device: &Device,
     ) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -51,7 +51,7 @@ impl Mesh {
             vertex_buffer,
             index_buffer,
             num_elements: indices.len() as u32,
-            material: material.unwrap_or(0),
+            material,
         }
     }
 }
@@ -110,7 +110,7 @@ pub struct ModelBlueprint {
 }
 #[allow(dead_code)]
 impl ModelBlueprint {
-    pub fn into_model(self, context: &GPUState, asset_store: Res<AssetStore>) -> (String, Model) {
+    pub fn into_model(self, context: &GPUState) -> (String, Model) {
         let mesh_vertices = self
             .vertices
             .iter()
@@ -121,21 +121,19 @@ impl ModelBlueprint {
             })
             .collect::<Vec<_>>();
 
-        let mat_id = {
-            let store = asset_store.read().unwrap();
-            store.get_material_id(&self.diffuse_texture_name)
-        };
-
         let mesh = Mesh::from_vertices(
             mesh_vertices,
             self.indices,
             &self.name,
-            mat_id,
+            0,
             &context.device,
         );
 
+        let material = Material::from_texture_file(&self.diffuse_texture_name, context);
+
         let model = Model {
             meshes: vec![mesh],
+            materials: vec![material],
         };
 
         (self.name, model)
@@ -150,13 +148,17 @@ impl std::fmt::Display for Model {
             meshes = new_meshes;
         }
         meshes = format!("{})", meshes);
-        write!(f, "model[meshes: {}]", meshes)
+        let mut materials = format!("({}", self.materials[0]);
+        for material in self.materials.iter().skip(1) {
+            materials = format!("{}, {}", materials, material);
+        }
+        write!(f, "model[meshes: {}, materials: {}]", meshes, materials)
     }
 }
 
 impl std::fmt::Display for Mesh {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(mesh:{}, mat_id:{})", self.name, self.material)
+        write!(f, "mesh:{}", self.name)
     }
 }
 

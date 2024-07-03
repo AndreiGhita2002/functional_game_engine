@@ -28,22 +28,14 @@ pub struct AssetStore {
 }
 
 impl AssetStore {
-    pub fn new(gpu: &GPUState, to_load: Option<AssetsToLoad>) -> Res<Self> {
+    pub fn new(gpu: &GPUState, to_load: AssetsToLoad) -> Res<Self> {
+        // loading materials
         let mut materials = Vec::new();
-        let mut models = Vec::new();
-        if let Some(file_queue) = to_load {
-            for filename in file_queue.texture_files.iter() {
-                let mat = Material::from_texture_file(filename, gpu);
-                materials.push(Res::new(mat));
-            }
-            for filename in file_queue.model_files.iter() {
-                let mut error_str = String::from("Model file not found: ");
-                error_str.push_str(filename);
-                let model = Model::from_model_file(filename, gpu)
-                    .expect(&error_str);
-                models.push(Res::new(model));
-            }
+        for filename in to_load.texture_files.iter() {
+            let mat = Material::from_texture_file(filename, gpu);
+            materials.push(Res::new(mat));
         }
+        // QUAD constant
         const SQUARE_MESH: [SpriteVertex; 6] = [
             SpriteVertex { position: [0., 0.], tex_coords: [1., 1.] },
             SpriteVertex { position: [1., 0.], tex_coords: [0., 1.] },
@@ -52,9 +44,10 @@ impl AssetStore {
             SpriteVertex { position: [1., 1.], tex_coords: [0., 0.] },
             SpriteVertex { position: [0., 1.], tex_coords: [1., 0.] },
         ];
-        Res::new(AssetStore {
+        // constructing the asset store
+        let asset_store = AssetStore {
             materials,
-            models,
+            models: vec![],  // models will be populated after
             instance_buffer_2d: gpu.device.create_buffer(&BufferDescriptor {
                 label: Some("2D Instance Buffer"),
                 size: mem::size_of::<RawTransform2D>() as BufferAddress,
@@ -72,7 +65,19 @@ impl AssetStore {
                 contents: bytemuck::cast_slice(&SQUARE_MESH),
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             })
-        })
+        };
+        // loading models
+        // this needs to be done afer materials
+        let mut models = Vec::new();
+        for filename in to_load.model_files.iter() {
+            let mut error_str = String::from("Model file not found: ");
+            error_str.push_str(filename);
+            let model = Model::from_model_file(filename, gpu)
+                .expect(&error_str);
+            models.push(Res::new(model));
+        }
+        // wrapping it up
+        Res::new(asset_store)
     }
 
     pub fn get_material(&self, id: MaterialId) -> Option<&Res<Material>> {
