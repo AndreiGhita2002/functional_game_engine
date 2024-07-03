@@ -4,80 +4,10 @@ use wgpu::Device;
 use wgpu::util::DeviceExt;
 
 use crate::{GPUState, resources};
+use crate::asset::{AssetStore, MaterialId};
+use crate::render::{ModelVertex, Vertex};
 use crate::render::texture::Texture;
-
-pub trait Vertex: bytemuck::Pod + bytemuck::Zeroable + Copy + Clone + Debug {
-    fn desc() -> wgpu::VertexBufferLayout<'static>;
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct ModelVertex {
-    pub position: [f32; 3],
-    pub tex_coords: [f32; 2],
-    pub normal: [f32; 3],
-}
-
-impl Vertex for ModelVertex {
-    fn desc() -> wgpu::VertexBufferLayout<'static> {
-        use std::mem;
-        wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<ModelVertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-            ],
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct SpriteVertex {
-    pub position: [f32; 2],
-    pub tex_coords: [f32; 2],
-}
-
-impl Vertex for SpriteVertex {
-    fn desc() -> wgpu::VertexBufferLayout<'static> {
-        use std::mem;
-        wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<SpriteVertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-            ],
-        }
-    }
-}
-
-pub struct Model {
-    pub meshes: Vec<Mesh>,
-    pub materials: Vec<Material>,
-}
+use crate::util::res::Res;
 
 pub struct Material {
     pub name: String,
@@ -85,12 +15,16 @@ pub struct Material {
     pub bind_group: wgpu::BindGroup,
 }
 
+pub struct Model {
+    pub meshes: Vec<Mesh>,
+}
+
 pub struct Mesh {
     pub name: String,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub num_elements: u32,
-    pub material: usize,
+    pub material: MaterialId,
 }
 
 impl Mesh {
@@ -98,7 +32,7 @@ impl Mesh {
         vertices: Vec<T>,
         indices: Vec<u32>,
         name: &str,
-        material: Option<usize>,
+        material: Option<MaterialId>,
         device: &Device,
     ) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -154,6 +88,18 @@ impl Material {
     }
 }
 
+impl Model {
+    pub fn from_model_file(filename: &str, context: &GPUState) -> anyhow::Result<Model> {
+        let f = async { resources::load_model(
+            filename,
+            &context.device,
+            &context.queue,
+            &context.bind_groups.texture_layout
+        ).await };
+        pollster::block_on(f)
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 #[allow(dead_code)]
 pub struct ModelBlueprint {
@@ -164,7 +110,7 @@ pub struct ModelBlueprint {
 }
 #[allow(dead_code)]
 impl ModelBlueprint {
-    pub fn into_model(self, context: &GPUState) -> (String, Model) {
+    pub fn into_model(self, context: &GPUState, asset_store: Res<AssetStore>) -> (String, Model) {
         let mesh_vertices = self
             .vertices
             .iter()
@@ -175,19 +121,21 @@ impl ModelBlueprint {
             })
             .collect::<Vec<_>>();
 
+        let mat_id = {
+            let store = asset_store.read().unwrap();
+            store.get_material_id(&self.diffuse_texture_name)
+        };
+
         let mesh = Mesh::from_vertices(
             mesh_vertices,
             self.indices,
             &self.name,
-            None,
+            mat_id,
             &context.device,
         );
 
-        let material = Material::from_texture_file(&self.diffuse_texture_name, context);
-
         let model = Model {
             meshes: vec![mesh],
-            materials: vec![material],
         };
 
         (self.name, model)
@@ -202,17 +150,13 @@ impl std::fmt::Display for Model {
             meshes = new_meshes;
         }
         meshes = format!("{})", meshes);
-        let mut materials = format!("({}", self.materials[0]);
-        for material in self.materials.iter().skip(1) {
-            materials = format!("{}, {}", materials, material);
-        }
-        write!(f, "model[meshes: {}, materials: {}]", meshes, materials)
+        write!(f, "model[meshes: {}]", meshes)
     }
 }
 
 impl std::fmt::Display for Mesh {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "mesh:{}", self.name)
+        write!(f, "(mesh:{}, mat_id:{})", self.name, self.material)
     }
 }
 

@@ -1,12 +1,11 @@
 use std::io::{BufReader, Cursor};
 
+use cfg_if::cfg_if;
 use wgpu::{BindGroupLayout, Device, Queue};
 use wgpu::util::DeviceExt;
 
-use cfg_if::cfg_if;
-
-use crate::render::{model, texture};
-use crate::render::model::{Material, Mesh, ModelVertex, SpriteVertex};
+use crate::render::{model, ModelVertex, texture};
+use crate::render::model::{Material, Mesh};
 
 #[cfg(target_arch = "wasm32")]
 fn format_url(file_name: &str) -> reqwest::Url {
@@ -64,6 +63,7 @@ pub async fn load_binary(file_name: &str) -> anyhow::Result<Vec<u8>> {
     Ok(data)
 }
 
+
 #[allow(dead_code)]
 pub async fn load_texture(
     file_name: &str,
@@ -73,6 +73,7 @@ pub async fn load_texture(
     let data = load_binary(file_name).await?;
     texture::Texture::from_bytes(device, queue, &data, file_name)
 }
+
 
 #[allow(dead_code)]
 pub async fn load_model(
@@ -162,14 +163,17 @@ pub async fn load_model(
                 vertex_buffer,
                 index_buffer,
                 num_elements: m.mesh.indices.len() as u32,
-                material: m.mesh.material_id.unwrap_or(0),
+                material: m.mesh.material_id.unwrap_or(0), //todo convert this material id to my own
             }
         })
         .collect::<Vec<_>>();
 
-    Ok(model::Model { meshes, materials })
+    Ok(model::Model { meshes })
 }
 
+
+// function from old engine; might be useful eventually
+/*
 #[allow(dead_code)]
 pub async fn load_sprite(
     sprite_name: &str,
@@ -178,7 +182,7 @@ pub async fn load_sprite(
     queue: &Queue,
     layout: &BindGroupLayout,
 ) -> anyhow::Result<model::Model> {
-    let file_url = format!("{MODEL_DIR}{sprite_name}.jpg");  //todo sprites can only be jpg rn
+    let file_url = format!("{MODEL_DIR}{sprite_name}.jpg");
     let indices: Vec<u32> = vec![0, 1, 1, 2, 2, 3, 3, 0];
     let vert = vertices.unwrap_or(vec![
         SpriteVertex { position: [1.0, 1.0], tex_coords: [1.0, 1.0] },
@@ -187,8 +191,7 @@ pub async fn load_sprite(
         SpriteVertex { position: [0.0, 1.0], tex_coords: [0.0, 1.0] },
     ]);
     let diffuse_texture = load_texture(&file_url, device, queue).await?;
-    // todo: use the size of the texture:
-    // let ratio = diffuse_texture.texture.height() as f32 / diffuse_texture.texture.width() as f32;
+    let ratio = diffuse_texture.texture.height() as f32 / diffuse_texture.texture.width() as f32;
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout,
         entries: &[
@@ -214,3 +217,4 @@ pub async fn load_sprite(
         }],
     })
 }
+*/

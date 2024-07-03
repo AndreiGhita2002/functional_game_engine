@@ -6,15 +6,16 @@ use winit::{
     window::WindowBuilder,
 };
 
+use crate::asset::{AssetsToLoad, AssetStore};
 use crate::game::GameState;
 use crate::render::{GPUState, Renderer};
-use crate::render::asset::{AssetsToLoad, AssetStore};
 use crate::render::sprite::SpriteRenderer;
 
 pub mod game;
 pub mod util;
 pub mod render;
 mod resources;
+pub mod asset;
 
 pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
     // Window setup

@@ -1,8 +1,9 @@
+use cgmath::{One, Quaternion};
 use functional_game_engine::game::entity::{Change, Component};
 use functional_game_engine::game::GameState;
-use functional_game_engine::game::transform::{Transform2D, TRANSFORM_COMP_NAME};
-use functional_game_engine::render::asset::AssetsToLoad;
-use functional_game_engine::render::sprite::Sprite;
+use functional_game_engine::game::transform::{Transform2D, Transform3D, TRANSFORM_COMP_NAME};
+use functional_game_engine::asset::AssetsToLoad;
+use functional_game_engine::render::sprite::SpriteComponent;
 use functional_game_engine::run;
 
 #[derive(Copy, Clone)]
@@ -20,13 +21,22 @@ fn main() {
         let mut e1 = game_state.new_entity_mut();
         Transform2D { pos: [-1., -0.2], size: [0.5, 0.5], rot: 0. }.to_entity(e1);
         e1.mut_data().alloc(Tag { _i: 10 }, "tag");
-        Sprite::new(0).to_entity(&mut e1);
+        SpriteComponent::new(0).to_entity(&mut e1);
     }
     {
         let mut e2 = game_state.new_entity_mut();
         Transform2D { pos: [-1., -1.], size: [1.0, 0.5], rot: 1.0 }.to_entity(e2);
-        Sprite::new(0).to_entity(&mut e2);
+        SpriteComponent::new(0).to_entity(&mut e2);
     }
+    /*{
+        let mut e3 = game_state.new_entity_mut();
+        Transform3D {
+            pos: [0., 0., 0.],
+            size: [1.0, 1.0, 1.0],
+            rotation: Quaternion::one(),
+        }.to_entity(e3);
+        // ModelComponent::new()
+    }*/
 
     game_state.linear_systems.push(|entity| {
         if let Some(mut p) = entity.data().get::<Transform2D>(TRANSFORM_COMP_NAME) {
@@ -66,7 +76,8 @@ fn main() {
     */
 
     let to_load = AssetsToLoad {
-        texture_files: vec!["angry_cat.png".to_string()]
+        texture_files: vec!["angry_cat.png".to_string()],
+        model_files: vec![],
     };
 
     pollster::block_on(run(game_state, to_load));

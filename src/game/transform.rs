@@ -3,8 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::mem;
 
 use bytemuck::{Pod, Zeroable};
-use cgmath::num_traits::Pow;
 use cgmath::{Matrix4, Quaternion, Vector3};
+use cgmath::num_traits::Pow;
 use mem_macros::size_of;
 use wgpu::BufferAddress;
 

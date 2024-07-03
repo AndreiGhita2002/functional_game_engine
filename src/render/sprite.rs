@@ -3,16 +3,15 @@ use std::fmt::{Display, Formatter};
 
 use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
 
+use crate::asset::{AssetStore, MaterialId};
 use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
 use crate::game::transform::RawTransform2D;
-use crate::render::{GPUState, Renderer};
-use crate::render::asset::{AssetStore, MaterialId};
-use crate::render::model::{SpriteVertex, Vertex};
+use crate::render::{GPUState, Renderer, SpriteVertex, Vertex};
 use crate::util::res::Res;
 
 #[derive(Copy, Clone)]
-pub struct Sprite {
+pub struct SpriteComponent {
     material_id: MaterialId,
     instance_id: u32,
 }
@@ -73,8 +72,9 @@ impl Renderer for SpriteRenderer {
         // creating bundles
         let mut bundles = Vec::new();
         for entity in game.entities.iter() {
-            if let Some(sprite) = entity.data().get::<Sprite>("sprite") {
-                if let Some(material) = assets.get_material(sprite.material_id) {
+            if let Some(sprite) = entity.data().get::<SpriteComponent>("sprite") {
+                if let Some(material_res) = assets.get_material(sprite.material_id) {
+                    let material = material_res.read().unwrap();
                     // create the encoder
                     let mut encoder = gpu.device.create_render_bundle_encoder(
                         &wgpu::RenderBundleEncoderDescriptor {
@@ -136,7 +136,7 @@ impl Renderer for SpriteRenderer {
     }
 }
 
-impl Component for Sprite {
+impl Component for SpriteComponent {
     fn to_entity(mut self, entity: &mut Entity) {
         //todo THIS IS VERY BAD!!
         // make some kinda entity id to instance id mapping in AssetStore
@@ -146,13 +146,13 @@ impl Component for Sprite {
     }
 }
 
-impl Sprite {
+impl SpriteComponent {
     pub fn new(material_id: MaterialId) -> Self {
-        Sprite { material_id, instance_id: 0 }
+        SpriteComponent { material_id, instance_id: 0 }
     }
 }
 
-impl Display for Sprite {
+impl Display for SpriteComponent {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Sprite[mat={},inst={}", self.material_id, self.instance_id)
     }

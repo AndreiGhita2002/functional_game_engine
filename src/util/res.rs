@@ -18,8 +18,10 @@ impl<T> Res<T> {
     pub fn write(&self) -> LockResult<RwLockWriteGuard<'_, T>> {
         self.inner.write()
     }
+}
 
-    pub fn clone(&self) -> Self {
+impl<T> Clone for Res<T> {
+    fn clone(&self) -> Self {
         Res { inner: self.inner.clone() }
     }
 }
