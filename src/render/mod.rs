@@ -86,8 +86,7 @@ pub struct BindGroups {
 }
 
 #[allow(dead_code)]
-pub struct GPUState<'w> {
-    pub surface: wgpu::Surface<'w>,
+pub struct GPUState {
     pub surface_format: TextureFormat,
     pub device: wgpu::Device,
     pub queue: Queue,
@@ -97,8 +96,8 @@ pub struct GPUState<'w> {
     pub bind_groups: BindGroups,
 }
 
-impl GPUState<'_> {
-    pub async fn new(window: Window) -> Self {
+impl GPUState {
+    pub async fn new(window: Window) -> (Self, wgpu::Surface<'static>) {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -171,19 +170,19 @@ impl GPUState<'_> {
         let config = surface.get_default_config(&adapter, size.width, size.height).unwrap();
         surface.configure(&device, &config);
 
-        GPUState {
-            surface, surface_format,
+        (GPUState {
+            surface_format,
             device,
             queue,
             config,
             size,
             window,
             bind_groups: BindGroups {texture_layout},
-        }
+        }, surface)
     }
 
-    pub fn render(&mut self, renderer: &impl Renderer) {
-        let frame = self.surface
+    pub fn render(&self, renderer: &impl Renderer, surface: &wgpu::Surface) {
+        let frame = surface
             .get_current_texture()
             .expect("Failed to acquire next swap chain texture");
         let view = frame
@@ -193,7 +192,7 @@ impl GPUState<'_> {
         // if let Some(renderer) = renderers.first() {
         //     renderer.submit_pass(&self, &view);
         // }
-        renderer.render_pass(&self, &view);
+        renderer.render_pass(&view);
         frame.present();
     }
 
@@ -203,7 +202,7 @@ impl GPUState<'_> {
 }
 
 pub trait Renderer {
-    fn pre_render(&mut self, gpu_state: &GPUState, game_state: &GameState);
+    fn pre_render(&mut self, game_state: &GameState);
 
-    fn render_pass(&self, gpu_state: &GPUState, view: &TextureView);
+    fn render_pass(&self, view: &TextureView);
 }

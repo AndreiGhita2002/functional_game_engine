@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::time::{Duration, Instant};
 
 use winit::{
@@ -6,17 +7,46 @@ use winit::{
     window::WindowBuilder,
 };
 
-use crate::asset::{AssetsToLoad, AssetStore};
+use crate::asset::AssetStore;
 use crate::game::GameState;
 use crate::render::{GPUState, Renderer};
 use crate::render::sprite_render::SpriteRenderer;
+use crate::util::res::Res;
 
 pub mod game;
 pub mod util;
 pub mod render;
 pub mod asset;
 
-pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
+type SetupFn = fn(&mut GameState, Res<AssetStore>);
+
+/// Contains lists of user defined actions
+/// This is the main struct the user interacts with
+pub struct Application {
+    // user defined functions:
+    /// setup function is run before the window is created
+    setup_fn: fn(&mut GameState, Res<AssetStore>),
+}
+
+impl Application {
+    pub fn new() -> Self {
+        Application {
+            setup_fn: |_g, _a| {},
+        }
+    }
+
+    // pub fn with_setup(mut self, setup_fn: Box<SetupFn>) -> Self {
+    pub fn with_setup(mut self, setup_fn: SetupFn) -> Self {
+        self.setup_fn = setup_fn;
+        self
+    }
+
+    pub fn run(self) {
+        pollster::block_on(run(self));
+    }
+}
+
+pub async fn run(app: Application) {
     // Window setup
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
@@ -25,10 +55,16 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
         .with_title("hello world")
         .build(&event_loop).unwrap();
 
-    let mut gpu_state = GPUState::new(window).await;
+    let (g, surface) = GPUState::new(window).await;
+    let gpu_state = Res::new(g);
+    let mut game_state = GameState::new();
+    // let asset_store = AssetStore::new(&gpu_state, saved_assets);
+    let mut asset_store = AssetStore::new(gpu_state.clone());
 
-    let asset_store = AssetStore::new(&gpu_state, to_load);
-    let mut sprite_renderer = SpriteRenderer::new(&gpu_state, asset_store.clone());
+    (app.setup_fn)(&mut game_state, asset_store.clone());
+
+    let mut sprite_renderer = SpriteRenderer::new(gpu_state.clone(), asset_store.clone());
+    // let mut model_renderer = ModelRenderer::new(gpu_state.clone(), asset_store.clone()); //todo implement
 
     // time keeping:
     let sim_tick_duration: Duration = Duration::from_secs_f32(1.0 / 30.0);
@@ -57,10 +93,17 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
                     game_state.sim_tick(delta);
                     // game_state.print_comps::<Transform2D>("pos");
                     // game_state.print_comps::<Sprite>("sprite");
-                    sprite_renderer.pre_render(&gpu_state, &game_state);
+
+                    // updating the buffers
+                    let gpu = gpu_state.read().unwrap();
+                    asset_store.update_from_game(&game_state, gpu.deref());
+
+                    sprite_renderer.pre_render(&game_state);
+                    // model_renderer.pre_render(&game_state);
                     prev_time = now;
                 }
-                gpu_state.window().request_redraw();
+                let gpu = gpu_state.read().unwrap();
+                gpu.window().request_redraw();
             },
             Event::WindowEvent {
                 event: WindowEvent::RedrawRequested,
@@ -71,7 +114,9 @@ pub async fn run(mut game_state: GameState, to_load: AssetsToLoad) {
                 // It's preferable for applications that do not render continuously to render in
                 // this event rather than in AboutToWait, since rendering in here allows
                 // the program to gracefully handle redraws requested by the OS.
-                gpu_state.render(&sprite_renderer);
+                let mut gpu = gpu_state.read().unwrap();
+                gpu.render(&sprite_renderer, &surface);
+                // gpu_state.render(&model_renderer);
             },
             _ => ()
         };

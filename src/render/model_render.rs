@@ -15,22 +15,24 @@ pub struct ModelComponent {
 
 pub struct ModelRenderer {
     asset_store: Res<AssetStore>,
+    gpu_state: Res<GPUState>,
     bundles: Vec<RenderBundle>,
     pipeline: RenderPipeline,
 }
 
 impl ModelRenderer {
-    pub fn new(_gpu: &GPUState, _asset_store: Res<AssetStore>) -> Self {
+    pub fn new(gpu_state: Res<GPUState>, _asset_store: Res<AssetStore>) -> Self {
+        let _gpu = gpu_state.read().unwrap();
         todo!()
     }
 }
 
 impl Renderer for ModelRenderer {
-    fn pre_render(&mut self, _gpu_state: &GPUState, _game_state: &GameState) {
+    fn pre_render(&mut self, _game_state: &GameState) {
         todo!()
     }
 
-    fn render_pass(&self, _gpu_state: &GPUState, _view: &TextureView) {
+    fn render_pass(&self, _view: &TextureView) {
         todo!()
     }
 }
@@ -46,7 +48,6 @@ impl Component for ModelComponent {
 
 impl ModelComponent {
     pub fn new(model: Res<Model>) -> Self {
-        //todo
         ModelComponent { model, instance_id: 0 }
     }
 }
