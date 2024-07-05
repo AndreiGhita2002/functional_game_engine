@@ -13,6 +13,7 @@ pub struct ModelComponent {
     instance_id: u32,
 }
 
+#[allow(dead_code)]
 pub struct ModelRenderer {
     asset_store: Res<AssetStore>,
     gpu_state: Res<GPUState>,

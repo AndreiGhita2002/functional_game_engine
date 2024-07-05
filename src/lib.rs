@@ -114,7 +114,7 @@ pub async fn run(app: Application) {
                 // It's preferable for applications that do not render continuously to render in
                 // this event rather than in AboutToWait, since rendering in here allows
                 // the program to gracefully handle redraws requested by the OS.
-                let mut gpu = gpu_state.read().unwrap();
+                let gpu = gpu_state.read().unwrap();
                 gpu.render(&sprite_renderer, &surface);
                 // gpu_state.render(&model_renderer);
             },

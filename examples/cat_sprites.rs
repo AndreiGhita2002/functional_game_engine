@@ -4,9 +4,10 @@ use functional_game_engine::Application;
 use functional_game_engine::asset::AssetStore;
 use functional_game_engine::game::entity::{Change, Component};
 use functional_game_engine::game::GameState;
-use functional_game_engine::game::transform::{Transform2D, Transform3D, TRANSFORM_COMP_NAME};
+use functional_game_engine::game::transform::{get_pos, Transform2D, Transform3D, TRANSFORM_COMP_NAME};
 use functional_game_engine::render::model_render::ModelComponent;
 use functional_game_engine::render::sprite_render::SpriteComponent;
+use functional_game_engine::util::Either;
 use functional_game_engine::util::res::Res;
 
 #[derive(Copy, Clone)]
@@ -46,7 +47,7 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
     }
 
     game_state.linear_systems.push(|entity| {
-        if let Some(mut p) = entity.data().get::<Transform2D>(TRANSFORM_COMP_NAME) {
+        if let Some(Either::This(mut p)) = get_pos(entity.data()) {
             if entity.data().has("tag") {
                 if p.pos[0] > 1.0 {
                     p.pos[0] = -1.;
@@ -77,7 +78,6 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
                 }
             }
         }
-
         None
     });
     */
@@ -86,7 +86,6 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 fn main() {
     Application::new()
-        // .with_setup(Box::new(setup))
         .with_setup(setup)
         .run();
 }
