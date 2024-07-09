@@ -52,6 +52,20 @@ impl dyn Component {
     }
 }
 
+macro_rules! impl_component {
+    ($t:ty, $name:literal) => {
+        impl Component for $t {
+            fn static_type_identifier() -> &'static str where Self: Sized {
+                $name
+            }
+
+            fn instance_type_identifier(&self) -> &'static str {
+                $name
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use crate::game::component::Component;
@@ -63,31 +77,8 @@ mod tests {
         a: i32,
         b: i32,
     }
-
-    impl Component for Comp1 {
-        fn static_type_identifier() -> &'static str
-        where
-            Self: Sized,
-        {
-            "comp1"
-        }
-
-        fn instance_type_identifier(&self) -> &'static str {
-            "comp1"
-        }
-    }
-    impl Component for Comp2 {
-        fn static_type_identifier() -> &'static str
-        where
-            Self: Sized,
-        {
-            "comp2"
-        }
-
-        fn instance_type_identifier(&self) -> &'static str {
-            "comp2"
-        }
-    }
+    impl_component!(Comp1, "comp1");
+    impl_component!(Comp2, "comp2");
 
     #[test]
     fn test_as_type() {
