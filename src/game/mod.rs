@@ -5,6 +5,7 @@ use crate::game::entity::{Entity, EntityChange};
 
 pub mod entity;
 pub mod transform;
+pub mod component;
 
 type LinearSystem = fn(&Entity) -> Option<Box<dyn EntityChange>>;
 type QuadraticSystem = fn(&Entity, &Entity) -> Option<Box<dyn EntityChange>>;
