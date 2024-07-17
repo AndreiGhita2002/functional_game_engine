@@ -64,6 +64,17 @@ macro_rules! impl_component {
             }
         }
     };
+    ($t:ty) => {
+        impl Component for $t {
+            fn static_type_identifier() -> &'static str where Self: Sized {
+                stringify!($t)
+            }
+
+            fn instance_type_identifier(&self) -> &'static str {
+                stringify!($t)
+            }
+        }
+    };
 }
 
 #[cfg(test)]
@@ -77,8 +88,8 @@ mod tests {
         a: i32,
         b: i32,
     }
-    impl_component!(Comp1, "comp1");
-    impl_component!(Comp2, "comp2");
+    impl_component!(Comp1);
+    impl_component!(Comp2);
 
     #[test]
     fn test_as_type() {
