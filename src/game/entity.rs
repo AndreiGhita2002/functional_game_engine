@@ -1,47 +1,49 @@
-use std::fmt;
+use crate::game::GAME_STATE;
 
-use anyhow::anyhow;
-
-use crate::util::arena::ComponentArena;
+use crate::game::component::{Component, ComponentHolder};
 
 pub struct Entity {
     id: u64,
-    data: ComponentArena,  //TODO: components should be stored and looped over together
 }
 
 impl Entity {
-    pub fn new(id: u64) -> Self {
-        Entity {
-            id,
-            data: ComponentArena::new(),
-        }
+    pub fn new() -> &'static Self {
+        let mut game = GAME_STATE.lock().unwrap();
+        let e = Entity {
+            id: game.next_id,
+        };
+        game.next_id += 1;
+        game.entities.push(e);
+        game.entities.last().unwrap()
     }
 
     pub fn id(&self) -> u64 {
         self.id
     }
 
-    pub fn data(&self) -> &ComponentArena {
-        &self.data
+    pub fn data(&self) -> Vec<&Box<dyn Component>> {
+        let state = GAME_STATE.lock().expect("GAME_STATE mutex is poisoned!");
+        state.component_table.entity_components(self.id)
     }
 
-    pub fn mut_data(&mut self) -> &mut ComponentArena {
-        &mut self.data
+    pub fn mut_data(&self) -> Vec<&mut Box<dyn Component>> {
+        let mut state = GAME_STATE.lock().expect("GAME_STATE mutex is poisoned!");
+        state.component_table.entity_components_mut(self.id)
     }
 
-    pub fn resolve_changes(&mut self, changes: Box<dyn EntityChange>) {
-        // todo error catching for resolve_changes
-        changes.arena_insert(self.mut_data()).unwrap();
-    }
-
-    pub fn print_comp<T: fmt::Display + Clone>(&self, label: &str) -> Option<()> {
-        let comp: T = self.data.get(label)?;
-        print!("{}", comp);
-        Some(())
+    pub fn add_comp<C: Component>(&self, component: C) {
+        let mut state = GAME_STATE.lock().expect("GAME_STATE mutex is poisoned!");
+        let comp_holder = ComponentHolder {
+            entity_id: self.id,
+            data: Box::new(component),
+        };
+        state.component_table.add_comp(comp_holder);
     }
 }
 
+//todo are EntityChanges still needed? I don't think so
 
+/*
 /// What changes are done to an Entity?
 pub trait EntityChange {
     fn arena_insert(self: Box<Self>, arena: &mut ComponentArena) -> anyhow::Result<()>;
@@ -71,7 +73,4 @@ impl<T: Clone> Change<T> {
         })
     }
 }
-
-pub trait Component {
-    fn to_entity(self, entity: &mut Entity);
-}
+*/

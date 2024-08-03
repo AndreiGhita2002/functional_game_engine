@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::time::{Duration, Instant};
 
 use winit::{
@@ -8,7 +8,7 @@ use winit::{
 };
 
 use crate::asset::AssetStore;
-use crate::game::GameState;
+use crate::game::{GAME_STATE, GameState};
 use crate::render::{GPUState, Renderer};
 use crate::render::sprite_render::SpriteRenderer;
 use crate::util::res::Res;
@@ -41,6 +41,11 @@ impl Application {
         self
     }
 
+    fn run_setup(&self, asset_store: Res<AssetStore>) {
+        let mut game_state = GAME_STATE.lock().expect("GAME STATE MUTEX POISONED!");
+        self.setup_fn(game_state.deref_mut(), asset_store)
+    }
+
     pub fn run(self) {
         pollster::block_on(run(self));
     }
@@ -57,11 +62,10 @@ pub async fn run(app: Application) {
 
     let (g, surface) = GPUState::new(window).await;
     let gpu_state = Res::new(g);
-    let mut game_state = GameState::new();
     // let asset_store = AssetStore::new(&gpu_state, saved_assets);
     let mut asset_store = AssetStore::new(gpu_state.clone());
 
-    (app.setup_fn)(&mut game_state, asset_store.clone());
+    app.run_setup(asset_store.clone());
 
     let mut sprite_renderer = SpriteRenderer::new(gpu_state.clone(), asset_store.clone());
     // let mut model_renderer = ModelRenderer::new(gpu_state.clone(), asset_store.clone()); //todo implement
@@ -90,15 +94,20 @@ pub async fn run(app: Application) {
                 let now = Instant::now();
                 let delta = now - prev_time;
                 if delta >= sim_tick_duration {
-                    game_state.sim_tick(delta);
+                    {
+                        // todo: NO!!! call sim_tick on Mutex<game state> and manage the locks inside
+                        //  also it should use a RWLock instead of a mutex
+                        let mut game_state = GAME_STATE.lock().unwrap();
+                        game_state.sim_tick(delta);
+                    }
                     // game_state.print_comps::<Transform2D>("pos");
                     // game_state.print_comps::<Sprite>("sprite");
 
                     // updating the buffers
                     let gpu = gpu_state.read().unwrap();
-                    asset_store.update_from_game(&game_state, gpu.deref());
+                    asset_store.update_from_game(gpu.deref());
 
-                    sprite_renderer.pre_render(&game_state);
+                    sprite_renderer.pre_render();
                     // model_renderer.pre_render(&game_state);
                     prev_time = now;
                 }

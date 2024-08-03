@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use anyhow::anyhow;
 
-struct ComponentTable {
-    rows: HashMap<String, Vec<ComponentHolder>>
+pub struct ComponentTable {
+    pub rows: HashMap<String, Vec<ComponentHolder>>
 }
 
-struct ComponentHolder {
-    entity_id: usize, // maybe pointer?
-    data: Box<dyn Component>,
+pub struct ComponentHolder {
+    pub entity_id: u64,
+    pub data: Box<dyn Component + Send>,
 }
 
-trait Component {
+pub trait Component {
     /// Returns the identifier of this type of component.
     /// should be the same as ``instance_type_identifier()``
     fn static_type_identifier() -> &'static str where Self: Sized;
@@ -75,6 +75,42 @@ macro_rules! impl_component {
             }
         }
     };
+}
+pub(crate) use impl_component;
+
+impl ComponentTable {
+    pub fn entity_components(&self, entity_id: u64) -> Vec<&Box<dyn Component>> {
+        let mut out = Vec::new();
+        for (_, component_row) in self.rows.iter() {
+            for comp_holder in component_row.iter() {
+                if comp_holder.entity_id == entity_id {
+                    out.push(&comp_holder.data)
+                }
+            }
+        }
+        out
+    }
+
+    pub fn entity_components_mut(&mut self, entity_id: u64) -> Vec<&mut Box<dyn Component>> {
+        let mut out = Vec::new();
+        for (_, mut component_row) in self.rows.iter_mut() {
+            for mut comp_holder in component_row.iter_mut() {
+                if comp_holder.entity_id == entity_id {
+                    out.push(&mut comp_holder.data)
+                }
+            }
+        }
+        out
+    }
+
+    pub fn insert_component_holder(&mut self, component_holder: ComponentHolder) {
+        let comp_name = component_holder.data.instance_type_identifier();
+        if let Some(mut row) = self.rows.get(comp_name) {
+            row.push(component_holder);
+        } else {
+            self.rows.insert(comp_name.to_string(), vec![component_holder]);
+        }
+    }
 }
 
 #[cfg(test)]

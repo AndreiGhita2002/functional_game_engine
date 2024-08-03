@@ -8,7 +8,7 @@ use cgmath::num_traits::Pow;
 use mem_macros::size_of;
 use wgpu::BufferAddress;
 
-use crate::game::entity::{Component, Entity};
+use crate::game::component::{Component, impl_component};
 use crate::util::arena::ComponentArena;
 use crate::util::Either;
 
@@ -167,18 +167,8 @@ impl RawTransform3D {
     }
 }
 
-
-impl Component for Transform2D {
-    fn to_entity(self, entity: &mut Entity) {
-        entity.mut_data().alloc(self, TRANSFORM_COMP_NAME)
-    }
-}
-
-impl Component for Transform3D {
-    fn to_entity(self, entity: &mut Entity) {
-        entity.mut_data().alloc(self, TRANSFORM_COMP_NAME)
-    }
-}
+impl_component!(Transform2D);
+impl_component!(Transform3D);
 
 impl Display for Transform2D {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

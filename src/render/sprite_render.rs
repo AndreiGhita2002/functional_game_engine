@@ -6,7 +6,7 @@ use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
 use crate::asset::{AssetStore};
 use crate::asset::model::Material;
 use crate::game::entity::{Component, Entity};
-use crate::game::GameState;
+use crate::game::{GAME_STATE, GameState};
 use crate::game::transform::RawTransform2D;
 use crate::render::{GPUState, Renderer, SpriteVertex, Vertex};
 use crate::util::res::Res;
@@ -69,7 +69,8 @@ impl SpriteRenderer {
 
 impl Renderer for SpriteRenderer {
     /// Render Setup
-    fn pre_render(&mut self, game: &GameState) {
+    fn pre_render(&mut self) {
+        let game = GAME_STATE.lock().unwrap();
         let gpu = self.gpu_state.read().unwrap();
         // borrow asset store
         let assets = self.asset_store.read().unwrap();

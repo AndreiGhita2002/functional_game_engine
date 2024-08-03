@@ -202,7 +202,7 @@ impl GPUState {
 }
 
 pub trait Renderer {
-    fn pre_render(&mut self, game_state: &GameState);
+    fn pre_render(&mut self);
 
     fn render_pass(&self, view: &TextureView);
 }
