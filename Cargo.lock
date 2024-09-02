@@ -706,6 +706,7 @@ dependencies = [
  "image",
  "log",
  "mem_macros",
+ "once_cell",
  "pollster",
  "reqwest",
  "serde",

@@ -2,15 +2,14 @@ use wgpu::{RenderBundle, RenderPipeline, TextureView};
 
 use crate::asset::AssetStore;
 use crate::asset::model::Model;
-use crate::game::entity::{Component, Entity};
-use crate::game::GameState;
+use crate::game::component::Component;
 use crate::render::{GPUState, Renderer};
 use crate::util::res::Res;
+use crate::impl_component;
 
 #[derive(Clone)]
 pub struct ModelComponent {
     pub model: Res<Model>,
-    instance_id: u32,
 }
 
 #[allow(dead_code)]
@@ -29,7 +28,7 @@ impl ModelRenderer {
 }
 
 impl Renderer for ModelRenderer {
-    fn pre_render(&mut self, _game_state: &GameState) {
+    fn pre_render(&mut self) {
         todo!()
     }
 
@@ -38,17 +37,4 @@ impl Renderer for ModelRenderer {
     }
 }
 
-impl Component for ModelComponent {
-    fn to_entity(mut self, entity: &mut Entity) {
-        //todo THIS IS also VERY BAD!!
-        self.instance_id = entity.id() as u32;
-        entity.mut_data().alloc(self, "model");
-        eprintln!("{}" , entity.data().get_content_string());
-    }
-}
-
-impl ModelComponent {
-    pub fn new(model: Res<Model>) -> Self {
-        ModelComponent { model, instance_id: 0 }
-    }
-}
+impl_component!(ModelComponent);

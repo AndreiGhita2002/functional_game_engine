@@ -6,7 +6,7 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use model::{Material, Model};
 
-use crate::game::{GAME_STATE, GameState};
+use crate::game::GAME_STATE;
 use crate::game::transform::{get_pos, RawTransform2D, RawTransform3D};
 use crate::render::{GPUState, SpriteVertex};
 use crate::util::Either;
@@ -120,12 +120,12 @@ impl AssetStore {
 
 impl Res<AssetStore> {
     pub fn update_from_game(&mut self, gpu: &GPUState) {
-        let game_state = GAME_STATE.lock().unwrap();
+        let game_state = GAME_STATE.read().unwrap();
         let mut raw2d = Vec::new();
         let mut raw3d = Vec::new();
 
         for entity in game_state.entities.iter() {
-            if let Some(pos) = get_pos(entity.data()) {
+            if let Some(pos) = get_pos(entity, &game_state) {
                 match pos {
                     Either::This(t_2d) => {raw2d.push(t_2d.to_raw())}
                     Either::That(t_3d) => {raw3d.push(t_3d.to_raw())}

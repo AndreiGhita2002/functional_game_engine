@@ -5,16 +5,16 @@ use wgpu::{RenderBundle, RenderBundleDescriptor, RenderPipeline, TextureView};
 
 use crate::asset::{AssetStore};
 use crate::asset::model::Material;
-use crate::game::entity::{Component, Entity};
-use crate::game::{GAME_STATE, GameState};
+use crate::game::component::Component;
+use crate::game::GAME_STATE;
 use crate::game::transform::RawTransform2D;
 use crate::render::{GPUState, Renderer, SpriteVertex, Vertex};
 use crate::util::res::Res;
+use crate::impl_component;
 
 #[derive(Clone)]
 pub struct SpriteComponent {
-    material: Res<Material>,
-    instance_id: u32,
+    pub material: Res<Material>,
 }
 
 pub struct SpriteRenderer {
@@ -70,42 +70,46 @@ impl SpriteRenderer {
 impl Renderer for SpriteRenderer {
     /// Render Setup
     fn pre_render(&mut self) {
-        let game = GAME_STATE.lock().unwrap();
+        let game = GAME_STATE.read().unwrap();
         let gpu = self.gpu_state.read().unwrap();
         // borrow asset store
         let assets = self.asset_store.read().unwrap();
         // creating bundles
         let mut bundles = Vec::new();
-        for entity in game.entities.iter() {
-            if let Some(sprite) = entity.data().get::<SpriteComponent>("sprite") {
-                let material = sprite.material.read().unwrap();
-                // create the encoder
-                let mut encoder = gpu.device.create_render_bundle_encoder(
-                    &wgpu::RenderBundleEncoderDescriptor {
-                        label: Some("Bundle Encoder"),
-                        color_formats: &[Some(gpu.surface_format)],
-                        depth_stencil: None,
-                        sample_count: 1,  //wgpu::MultisampleState::default() has count 1
-                        multiview: None,
-                    }
-                );
-                // setting the pipeline
-                encoder.set_pipeline(&self.pipeline);
-                // pass the texture in
-                encoder.set_bind_group(0, &material.bind_group, &[]);
-                // pass a quad model in (two triangles make a square)
-                encoder.set_vertex_buffer(0, assets.quad_v_buffer_slice(..));
-                // pass the instance in
-                encoder.set_vertex_buffer(1, assets.instance_buffer_2d_slice(..));
-                // draw
-                let i = sprite.instance_id..(sprite.instance_id + 1);
-                encoder.draw(0..6, i);
-                // output the bundle
-                let bundle = encoder.finish(&RenderBundleDescriptor {
-                    label: Some("sprite bundle"),
-                });
-                bundles.push(bundle);
-            }
+        let sprite_row = game.component_table.rows
+            .get(SpriteComponent::static_type_identifier()).unwrap();
+        for sprite_holder in sprite_row.iter() {
+            // todo: this assumes that instance id == entity id,
+            //  which is a bad assumption to make
+            let instance_id = sprite_holder.entity_id as u32;
+            let sprite = sprite_holder.data.as_type::<SpriteComponent>().unwrap();
+            let material = sprite.material.read().unwrap();
+            // create the encoder
+            let mut encoder = gpu.device.create_render_bundle_encoder(
+                &wgpu::RenderBundleEncoderDescriptor {
+                    label: Some("Bundle Encoder"),
+                    color_formats: &[Some(gpu.surface_format)],
+                    depth_stencil: None,
+                    sample_count: 1,  //wgpu::MultisampleState::default() has count 1
+                    multiview: None,
+                }
+            );
+            // setting the pipeline
+            encoder.set_pipeline(&self.pipeline);
+            // pass the texture in
+            encoder.set_bind_group(0, &material.bind_group, &[]);
+            // pass a quad model in (two triangles make a square)
+            encoder.set_vertex_buffer(0, assets.quad_v_buffer_slice(..));
+            // pass the instance in
+            encoder.set_vertex_buffer(1, assets.instance_buffer_2d_slice(..));
+            // draw
+            let i = instance_id..(instance_id + 1);
+            encoder.draw(0..6, i);
+            // output the bundle
+            let bundle = encoder.finish(&RenderBundleDescriptor {
+                label: Some("sprite bundle"),
+            });
+            bundles.push(bundle);
         }
         self.bundles = bundles
     }
@@ -140,21 +144,7 @@ impl Renderer for SpriteRenderer {
     }
 }
 
-impl Component for SpriteComponent {
-    fn to_entity(mut self, entity: &mut Entity) {
-        //todo THIS IS VERY BAD!!
-        // make some kinda entity id to instance id mapping in AssetStore
-        self.instance_id = entity.id() as u32;
-        entity.mut_data().alloc(self, "sprite");
-        eprintln!("{}" , entity.data().get_content_string());
-    }
-}
-
-impl SpriteComponent {
-    pub fn new(material: Res<Material>) -> Self {
-        SpriteComponent { material, instance_id: 0 } // todo deal with instance id
-    }
-}
+impl_component!(SpriteComponent);
 
 impl Display for SpriteComponent {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -162,6 +152,6 @@ impl Display for SpriteComponent {
             let mat = self.material.read().unwrap();
             mat.name.clone()
         };
-        write!(f, "Sprite[mat={},inst={}]", mat_name, self.instance_id)
+        write!(f, "Sprite[mat={}]", mat_name)
     }
 }

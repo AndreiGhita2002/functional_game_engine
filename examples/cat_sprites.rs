@@ -2,17 +2,31 @@ use cgmath::{One, Quaternion};
 
 use functional_game_engine::Application;
 use functional_game_engine::asset::AssetStore;
-use functional_game_engine::game::entity::{Change, Component, Entity};
-use functional_game_engine::game::GameState;
-use functional_game_engine::game::transform::{get_pos, Transform2D, Transform3D, TRANSFORM_COMP_NAME};
+use functional_game_engine::game::component::Component;
+use functional_game_engine::game::entity::Entity;
+use functional_game_engine::game::{add_system, GameState};
+use functional_game_engine::game::system::OneComponentSystem;
+use functional_game_engine::game::transform::{Transform2D, Transform3D};
 use functional_game_engine::render::model_render::ModelComponent;
 use functional_game_engine::render::sprite_render::SpriteComponent;
-use functional_game_engine::util::Either;
 use functional_game_engine::util::res::Res;
 
 #[derive(Copy, Clone)]
 struct Tag {
     _i: u32,
+}
+// impl_component!(Tag); //todo make this work, and replace the trait impl below
+impl Component for Tag {
+    fn static_type_identifier() -> &'static str
+    where
+        Self: Sized,
+    {
+        "Tag"
+    }
+
+    fn instance_type_identifier(&self) -> &'static str {
+        "Tag"
+    }
 }
 
 fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
@@ -26,37 +40,46 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
 
     // initialing the entities
     {
-        let mut e1 = Entity::new();
+        let e1 = Entity::new(game_state);
         e1.add_comp(Transform2D {
             pos: [-1., -0.2],
             size: [0.5, 0.5],
             rot: 0.
-        });
+        }, game_state);
         e1.add_comp(Tag {
             _i: 10
-        });
-        e1.add_comp(SpriteComponent::new(cat_sprite.clone()));
+        }, game_state);
+        e1.add_comp(SpriteComponent{
+            material: cat_sprite.clone()
+        }, game_state);
     }
     {
-        let mut e2 = Entity::new();
+        let e2 = Entity::new(game_state);
         e2.add_comp(Transform2D {
             pos: [-1., -1.],
             size: [1.0, 0.5],
             rot: 1.0
-        });
-        e2.add_comp(SpriteComponent::new(cat_sprite));
+        }, game_state);
+        e2.add_comp(SpriteComponent{
+            material: cat_sprite.clone()
+        }, game_state);
     }
     {
-        let mut e3 = game_state.new_entity_mut();
+        let e3 = Entity::new(game_state);
         e3.add_comp(Transform3D {
             pos: [0., 0., 0.],
             size: [1.0, 1.0, 1.0],
             rotation: Quaternion::one(),
-        });
-        e3.add_comp(ModelComponent::new(box_model));
+        }, game_state);
+        e3.add_comp(ModelComponent{
+            model: box_model
+        }, game_state);
     }
 
-    game_state.systems.push(|entity| {
+    add_system(OneComponentSystem::new(move_system));
+
+    // example of system that requires two components
+    /* game_state.systems.push(|entity| {
         if let Some(Either::This(mut p)) = get_pos(entity.data()) {
             if entity.data().has("tag") {
                 if p.pos[0] > 1.0 {
@@ -76,7 +99,7 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
         } else {
             None
         }
-    });
+    });*/
 
     // example quadratic system:
     /* // spams the console a lot
@@ -91,6 +114,15 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
         None
     });
     */
+}
+
+//todo this ain't working
+fn move_system(p: &mut Transform2D) {
+    if p.pos[0] > 0.9 {
+        p.pos[0] -= 0.1;
+    } else {
+        p.pos[0] += 0.1;
+    }
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]

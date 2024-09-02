@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::Mutex;
 use std::time::Duration;
+use once_cell::sync::Lazy;
 
-use crate::game::component::ComponentTable;
+use crate::game::component::{Component, ComponentTable};
 use crate::game::entity::Entity;
 use crate::game::system::System;
+use crate::game::transform::Transform2D;
+use crate::util::res::Global;
 
 pub mod entity;
 pub mod transform;
@@ -15,11 +17,15 @@ pub mod system;
 pub struct GameState {
     pub entities: Vec<Entity>,
     pub component_table: ComponentTable,
-    pub systems: Vec<Box<dyn System>>,
     next_id: u64
 }
 
-pub static GAME_STATE: Mutex<GameState> = Mutex::new(GameState::new());
+pub static GAME_STATE: Lazy<Global<GameState>> = Lazy::new( ||
+    Global::new(GameState::new())
+);
+pub static GAME_SYSTEMS: Lazy<Global<Vec<Box<dyn System + Send + Sync>>>> = Lazy::new(||
+    Global::new(Vec::new())
+);
 
 /// When and how many times should a System be run?
 /// todo: use System Times
@@ -36,53 +42,33 @@ impl GameState {
             component_table: ComponentTable {
                 rows: HashMap::new()
             },
-            systems: Vec::new(),
             next_id: 0,
         }
     }
 
-    pub fn sim_tick(&mut self, _delta_t: Duration) {
-        // let mut changes: Vec<(usize, Box<dyn EntityChange>)> = Vec::new();
-        //
-        // for (i, entity) in self.entities.iter().enumerate() {
-        //     // first we apply every linear system to it
-        //     for lin_sys in self.linear_systems.iter() {
-        //         if let Some(change) = lin_sys(entity) {
-        //             changes.push((i, change));
-        //         }
-        //     }
-        //
-        //     // then we loop through every other entity
-        //     for other in self.entities.iter() {
-        //         if entity.id() != other.id() {
-        //             // apply every quadratic system on this pair
-        //             for quad_sys in self.quadratic_systems.iter() {
-        //                 if let Some(change) = quad_sys(entity, other) {
-        //                     // changes are only applied to the first entity
-        //                     changes.push((i, change));
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-        //
-        // // now we apply the changes
-        // for (i, change) in changes {
-        //     if let Some(entity) = self.entities.get_mut(i) {
-        //         entity.resolve_changes(change);
-        //     }
-        // }
+    pub fn print_comps<C: Component + fmt::Display>(&self) {
+        let comp_str = C::static_type_identifier();
+        println!("Components {}:", comp_str);
+        if let Some(row) = self.component_table.rows.get(comp_str) {
+            for component in row.iter() {
+                if let Ok(c) = component.data.as_type::<C>() {
+                    print!("  {c}\n")
+                }
+            }
+        }
     }
+}
 
-    pub fn print_comps<T: fmt::Display + Clone>(&self, comp_label: &str) {
-        println!("print_comps({comp_label}): needs to be updated!!")
-        //todo
+pub fn add_system(system: Box<dyn System + Send + Sync>) {
+    let mut systems = GAME_SYSTEMS.write().unwrap();
+    systems.push(system);
+}
 
-        // println!("Components {}:", comp_label);
-        // for entity in self.entities.iter() {
-        //     print!("{}: ", entity.id());
-        //     let _ = entity.print_comp::<T>(comp_label);
-        //     println!();
-        // }
+pub fn game_tick(_delta_t: Duration) {
+    let mut game_state = GAME_STATE.write().unwrap();
+    let systems = GAME_SYSTEMS.read().unwrap();
+    for system in systems.iter() {
+        system.execute(&mut game_state)
     }
+    game_state.print_comps::<Transform2D>();
 }

@@ -8,7 +8,7 @@ use winit::{
 };
 
 use crate::asset::AssetStore;
-use crate::game::{GAME_STATE, GameState};
+use crate::game::{GAME_STATE, game_tick, GameState};
 use crate::render::{GPUState, Renderer};
 use crate::render::sprite_render::SpriteRenderer;
 use crate::util::res::Res;
@@ -42,8 +42,8 @@ impl Application {
     }
 
     fn run_setup(&self, asset_store: Res<AssetStore>) {
-        let mut game_state = GAME_STATE.lock().expect("GAME STATE MUTEX POISONED!");
-        self.setup_fn(game_state.deref_mut(), asset_store)
+        let mut game_state = GAME_STATE.write().expect("GAME STATE MUTEX POISONED!");
+        (self.setup_fn)(game_state.deref_mut(), asset_store)
     }
 
     pub fn run(self) {
@@ -94,14 +94,7 @@ pub async fn run(app: Application) {
                 let now = Instant::now();
                 let delta = now - prev_time;
                 if delta >= sim_tick_duration {
-                    {
-                        // todo: NO!!! call sim_tick on Mutex<game state> and manage the locks inside
-                        //  also it should use a RWLock instead of a mutex
-                        let mut game_state = GAME_STATE.lock().unwrap();
-                        game_state.sim_tick(delta);
-                    }
-                    // game_state.print_comps::<Transform2D>("pos");
-                    // game_state.print_comps::<Sprite>("sprite");
+                    game_tick(delta);
 
                     // updating the buffers
                     let gpu = gpu_state.read().unwrap();

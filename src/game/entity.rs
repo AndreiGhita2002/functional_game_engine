@@ -1,43 +1,73 @@
-use crate::game::GAME_STATE;
-
 use crate::game::component::{Component, ComponentHolder};
+use crate::game::GameState;
 
+#[derive(Copy, Clone)]
 pub struct Entity {
     id: u64,
 }
 
 impl Entity {
-    pub fn new() -> &'static Self {
-        let mut game = GAME_STATE.lock().unwrap();
+    pub fn new(state: &mut GameState) -> Self {
         let e = Entity {
-            id: game.next_id,
+            id: state.next_id,
         };
-        game.next_id += 1;
-        game.entities.push(e);
-        game.entities.last().unwrap()
+        state.next_id += 1;
+        state.entities.push(e.clone());
+        e
     }
 
     pub fn id(&self) -> u64 {
         self.id
     }
 
-    pub fn data(&self) -> Vec<&Box<dyn Component>> {
-        let state = GAME_STATE.lock().expect("GAME_STATE mutex is poisoned!");
+    pub fn data<'a>(
+        &self,
+        state: &'a GameState
+    ) -> Vec<&'a Box<dyn Component>> {
         state.component_table.entity_components(self.id)
     }
 
-    pub fn mut_data(&self) -> Vec<&mut Box<dyn Component>> {
-        let mut state = GAME_STATE.lock().expect("GAME_STATE mutex is poisoned!");
+    pub fn mut_data<'a>(
+        &self,
+        state: &'a mut GameState
+    ) -> Vec<&'a mut Box<dyn Component>> {
         state.component_table.entity_components_mut(self.id)
     }
 
-    pub fn add_comp<C: Component>(&self, component: C) {
-        let mut state = GAME_STATE.lock().expect("GAME_STATE mutex is poisoned!");
+    pub fn add_comp<C: Component + 'static>(
+        &self,
+        component: C,
+        state: &mut GameState
+    ) {
         let comp_holder = ComponentHolder {
             entity_id: self.id,
             data: Box::new(component),
         };
-        state.component_table.add_comp(comp_holder);
+        state.component_table.insert_component_holder(comp_holder);
+    }
+
+    pub fn get_comp<'a, C: Component>(
+        &self,
+        state: &'a GameState
+    ) -> Option<&'a C> {
+        for comp in self.data(state) {
+            if comp.instance_type_identifier() == C::static_type_identifier() {
+                return Some(comp.as_type::<C>().unwrap());
+            }
+        }
+        None
+    }
+
+    pub fn get_mut_comp<'a, C: Component>(
+        &self,
+        state: &'a mut GameState
+    ) -> Option<&'a mut C> {
+        for comp in self.mut_data(state) {
+            if comp.instance_type_identifier() == C::static_type_identifier() {
+                return Some(comp.as_mut_type::<C>().unwrap());
+            }
+        }
+        None
     }
 }
 

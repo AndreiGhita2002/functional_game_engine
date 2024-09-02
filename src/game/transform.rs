@@ -8,8 +8,10 @@ use cgmath::num_traits::Pow;
 use mem_macros::size_of;
 use wgpu::BufferAddress;
 
-use crate::game::component::{Component, impl_component};
-use crate::util::arena::ComponentArena;
+use crate::game::component::Component;
+use crate::game::entity::Entity;
+use crate::game::GameState;
+use crate::impl_component;
 use crate::util::Either;
 
 pub const TRANSFORM_COMP_NAME: &str = "pos";
@@ -61,19 +63,12 @@ impl Transform3D {
     }
 }
 
-pub fn get_pos(arena: &ComponentArena) -> Option<Either<Transform2D, Transform3D>> {
-    let l = arena.get_length(TRANSFORM_COMP_NAME)?;
-
-    if l == mem::size_of::<Transform2D>() {
-        let t: Transform2D = arena.get(TRANSFORM_COMP_NAME)?;
-        Some(Either::This(t))
-
-    } else if l == mem::size_of::<Transform3D>() {
-        let t: Transform3D = arena.get(TRANSFORM_COMP_NAME)?;
-        Some(Either::That(t))
-
+pub fn get_pos<'a>(entity: &Entity, state: &'a GameState) -> Option<Either<&'a Transform2D, &'a Transform3D>> {
+    if let Some(t2) = entity.get_comp::<Transform2D>(state) {
+        Some(Either::This(&t2))
+    } else if let Some(t3) = entity.get_comp::<Transform3D>(state) {
+        Some(Either::That(&t3))
     } else {
-        // unknown size of transform found
         None
     }
 }

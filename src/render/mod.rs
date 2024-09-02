@@ -3,8 +3,6 @@ use std::fmt::Debug;
 use wgpu::{BindGroupLayout, Queue, SurfaceTargetUnsafe, TextureFormat, TextureView};
 use winit::window::Window;
 
-use crate::game::GameState;
-
 pub mod sprite_render;
 pub mod model_render;
 
