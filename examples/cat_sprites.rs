@@ -118,10 +118,10 @@ fn setup(game_state: &mut GameState, assets: Res<AssetStore>) {
 
 //todo this ain't working
 fn move_system(p: &mut Transform2D) {
-    if p.pos[0] > 0.9 {
+    if p.pos[0] > 0.5 {
         p.pos[0] -= 0.1;
     } else {
-        p.pos[0] += 0.1;
+        p.pos[0] = 1.5;
     }
 }
 

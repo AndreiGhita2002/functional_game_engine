@@ -19,15 +19,16 @@ impl<C: Component> OneComponentSystem<C> {
 impl<C: Component> System for OneComponentSystem<C> {
     fn execute(&self, game_state: &mut GameState) {
         let comp_name = C::static_type_identifier();
-        let _ = game_state.component_table
+        let comp_iter = game_state.component_table
             .rows.get_mut(comp_name)
             .expect(&format!("No components of type: {comp_name}"))
-            .iter_mut()
-            .map(|comp_holder| {
-                if let Ok(comp) = comp_holder.data.as_mut_type::<C>() {
-                    (self.func)(comp)
-                }
-            });
+            .iter_mut();
+        for comp_holder in comp_iter {
+            // this should always be true; maybe remove the if?
+            if let Ok(comp) = comp_holder.data.as_mut_type::<C>() {
+                (self.func)(comp)
+            }
+        }
     }
 }
 
