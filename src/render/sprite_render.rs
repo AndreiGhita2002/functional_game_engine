@@ -30,7 +30,7 @@ impl SpriteRenderer {
             let gpu = gpu_state.read().unwrap();
             let shader = gpu.device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: None,
-                source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
+                source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("sprite.wgsl"))),
             });
 
             let pipeline_layout = gpu.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
