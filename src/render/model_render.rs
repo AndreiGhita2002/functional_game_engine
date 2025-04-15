@@ -8,6 +8,7 @@ use crate::game::entity::{Component, Entity};
 use crate::game::GameState;
 use crate::game::transform::{RawTransform3D};
 use crate::render::{BindGroups, GPUState, ModelVertex, Renderer, Vertex};
+use crate::render::camera::CameraUniform;
 use crate::util::res::Res;
 
 #[derive(Clone)]
@@ -16,19 +17,12 @@ pub struct ModelComponent {
     instance_id: u32,
 }
 
-#[repr(C)]
-#[derive(Default, Copy, Clone, Debug, Zeroable, Pod)]
-pub struct CameraBufferData {
-    view: [[f32; 4]; 4],
-    projection: [[f32; 4]; 4],
-}
-
 pub struct ModelRenderer {
     asset_store: Res<AssetStore>,
     gpu_state: Res<GPUState>,
     bundles: Vec<RenderBundle>,
     pipeline: RenderPipeline,
-    camera_buffer_data: CameraBufferData,
+    camera_buffer_data: CameraUniform,
     camera_buffer: Buffer,
     camera_bind_group: wgpu::BindGroup,
 }
@@ -37,7 +31,7 @@ impl ModelRenderer {
     pub fn new(gpu_state: Res<GPUState>, asset_store: Res<AssetStore>) -> Self {
         let (camera_buffer_data, camera_buffer, pipeline, camera_bind_group) = {
             let gpu = gpu_state.read().unwrap();
-            let vp_buffer_data = CameraBufferData::default();
+            let vp_buffer_data = gpu.camera.to_uniform();
 
             let vp_buffer = gpu.device.create_buffer_init(&BufferInitDescriptor {
                 label: Some("MVP Buffer"),
@@ -102,6 +96,8 @@ impl ModelRenderer {
 impl Renderer for ModelRenderer {
     fn pre_render(&mut self, game: &GameState) {
         let gpu = self.gpu_state.read().unwrap();
+        // updating the camera uniform
+        self.camera_buffer_data = gpu.camera.to_uniform(); //todo check this
         // borrow asset store
         let assets = self.asset_store.read().unwrap();
         // creating bundles

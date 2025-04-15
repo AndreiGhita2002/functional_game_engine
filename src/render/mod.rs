@@ -4,9 +4,11 @@ use wgpu::{BindGroupLayout, BufferSize, Queue, SurfaceTargetUnsafe, TextureForma
 use winit::window::Window;
 
 use crate::game::GameState;
+use crate::render::camera::Camera;
 
 pub mod sprite_render;
 pub mod model_render;
+mod camera;
 
 pub trait Vertex: bytemuck::Pod + bytemuck::Zeroable + Copy + Clone + Debug {
     fn desc() -> wgpu::VertexBufferLayout<'static>;
@@ -94,6 +96,7 @@ pub struct GPUState {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub window: Window,
     pub bind_groups: BindGroups,
+    pub camera: Camera, //todo should be attached to an entity or something
 }
 
 impl GPUState {
@@ -195,6 +198,7 @@ impl GPUState {
             size,
             window,
             bind_groups: BindGroups {texture_layout, camera_layout },
+            camera: Camera::default()
         }, surface)
     }
 
