@@ -40,7 +40,7 @@ impl SpriteRenderer {
             });
 
             gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: None,
+                label: Some("Sprite Render Pipeline"),
                 layout: Some(&pipeline_layout),
                 vertex: wgpu::VertexState {
                     module: &shader,

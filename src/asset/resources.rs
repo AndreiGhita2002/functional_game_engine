@@ -152,13 +152,13 @@ pub async fn load_model(
                     ],
                     tex_coords: [m.mesh.texcoords[i * 2], m.mesh.texcoords[i * 2 + 1]],
                     // if normals don't exist, then set them to 0 0 0
-                    normal: if m.mesh.normals.len() >= (i * 3 + 2) {[
-                        m.mesh.normals[i * 3],
-                        m.mesh.normals[i * 3 + 1],
-                        m.mesh.normals[i * 3 + 2],
-                    ]} else {
-                        [0.0, 0.0, 0.0]
-                    },
+                    // normal: if m.mesh.normals.len() >= (i * 3 + 2) {[
+                    //     m.mesh.normals[i * 3],
+                    //     m.mesh.normals[i * 3 + 1],
+                    //     m.mesh.normals[i * 3 + 2],
+                    // ]} else {
+                    //     [0.0, 0.0, 0.0]
+                    // },
                 })
                 .collect::<Vec<_>>();
 

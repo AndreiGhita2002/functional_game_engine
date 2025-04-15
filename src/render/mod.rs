@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use wgpu::{BindGroupLayout, Queue, SurfaceTargetUnsafe, TextureFormat, TextureView};
+use wgpu::{BindGroupLayout, BufferSize, Queue, SurfaceTargetUnsafe, TextureFormat, TextureView};
 use winit::window::Window;
 
 use crate::game::GameState;
@@ -17,14 +17,14 @@ pub trait Vertex: bytemuck::Pod + bytemuck::Zeroable + Copy + Clone + Debug {
 pub struct ModelVertex {
     pub position: [f32; 3],
     pub tex_coords: [f32; 2],
-    pub normal: [f32; 3],
+    // pub normal: [f32; 3],
 }
 
 impl Vertex for ModelVertex {
     fn desc() -> wgpu::VertexBufferLayout<'static> {
         use std::mem;
         wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<ModelVertex>() as wgpu::BufferAddress,
+            array_stride: size_of::<ModelVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -33,15 +33,15 @@ impl Vertex for ModelVertex {
                     format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    offset: size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
+                // wgpu::VertexAttribute {
+                //     offset: mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                //     shader_location: 2,
+                //     format: wgpu::VertexFormat::Float32x3,
+                // },
             ],
         }
     }
@@ -79,7 +79,7 @@ impl Vertex for SpriteVertex {
 
 pub struct BindGroups {
     pub texture_layout: BindGroupLayout,
-    // pub camera_layout: wgpu::BindGroupLayout,
+    pub camera_layout: BindGroupLayout,
     // pub light_layout: wgpu::BindGroupLayout,
     // pub camera: wgpu::BindGroup,
     // pub light: wgpu::BindGroup,
@@ -160,6 +160,23 @@ impl GPUState {
                 label: Some("texture_bind_group_layout"),
             });
 
+        let camera_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None, // or Some(NonZeroU64::new(64 * 3))
+                        },
+                        count: None,
+                    },
+                ],
+                label: Some("mvp_bind_group_layout"),
+        });
+
         let surface_caps = surface.get_capabilities(&adapter);
         let surface_format = surface_caps.formats.iter()
             .copied()
@@ -177,7 +194,7 @@ impl GPUState {
             config,
             size,
             window,
-            bind_groups: BindGroups {texture_layout},
+            bind_groups: BindGroups {texture_layout, camera_layout },
         }, surface)
     }
 

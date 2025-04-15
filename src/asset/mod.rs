@@ -113,6 +113,10 @@ impl AssetStore {
         self.instance_buffer_2d.slice(range)
     }
 
+    pub fn instance_buffer_3d_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
+        self.instance_buffer_3d.slice(range)
+    }
+
     pub fn quad_v_buffer_slice<S: RangeBounds<BufferAddress>>(&self, range: S) -> BufferSlice<'_> {
         self.quad_vertex_buffer.slice(range)
     }

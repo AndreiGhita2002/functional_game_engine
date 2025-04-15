@@ -117,7 +117,7 @@ impl ModelBlueprint {
             .map(|vertex| ModelVertex {
                 position: [vertex.0, vertex.1, vertex.2],
                 tex_coords: [vertex.0, vertex.1],
-                normal: [0.0, 0.0, 0.0],
+                // normal: [0.0, 0.0, 0.0],
             })
             .collect::<Vec<_>>();
 
